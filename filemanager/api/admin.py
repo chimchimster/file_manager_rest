@@ -1,8 +1,8 @@
 from django.contrib import admin
-from .models import StorageFile, UserFile
+from .models import Storage, UserFile
 
 
-@admin.register(StorageFile)
+@admin.register(Storage)
 class StorageFileAdmin(admin.ModelAdmin):
 
     list_display = ['file_id', 'file_uuid', 'status', 'created_at', 'updated_at']
