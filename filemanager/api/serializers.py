@@ -19,9 +19,9 @@ class StorageSerializer(serializers.ModelSerializer):
             case 'P':
                 representation['status'] = 'In progress'
             case 'R':
-                representation['status'] = 'Ready'
+                representation['status'] = 'ready'
             case 'E':
-                representation['status'] = 'Error'
+                representation['status'] = 'error'
 
         return representation
 
