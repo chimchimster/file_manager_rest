@@ -9,7 +9,7 @@ class Storage(models.Model):
     file_id = models.AutoField(primary_key=True, db_column='pk')
     file_uuid = models.UUIDField(null=False, db_index=True)
     file_extension = models.TextField(null=False)
-    file_name = models.TextField(null=False)
+    service_name = models.TextField(null=False)
     status = models.CharField(max_length=1, choices=STATUSES, default='P')
     created_at = models.DateTimeField(default=now)
     updated_at = models.DateTimeField(default=now)

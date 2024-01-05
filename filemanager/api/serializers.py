@@ -7,7 +7,7 @@ class StorageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Storage
-        fields = ['file_id', 'file_uuid', 'file_extension', 'status', 'created_at']
+        fields = ['file_id', 'service_name', 'file_uuid', 'file_extension', 'status', 'created_at']
 
     def to_representation(self, instance):
 
@@ -37,7 +37,7 @@ class FileSerializer(serializers.ModelSerializer):
 
     def get_filename(self, obj):
         return '%s_%s%s' % (
-            obj.file_id.file_name,
+            obj.file_id.service_name,
             obj.file_id.created_at.strftime('%Y-%m-%d_%H-%M'),
             obj.file_id.file_extension
         )

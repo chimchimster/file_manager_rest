@@ -12,6 +12,7 @@ class HttpRequestFilter(type):
         'file_extension',
         'file_uuid',
         'status',
+        'service_name'
     )
 
     # Timed filters is intended to filter records by the timestamps.
@@ -33,12 +34,9 @@ class HttpRequestFilter(type):
 
     def __new__(cls, name, bases, namespace):
 
-        print(namespace)
-        print()
         available_request_params = namespace.get('_%s__available_request_params' % namespace.get('__qualname__', ''), ())
-        print(available_request_params)
+
         for request_param in available_request_params:
-            print(request_param)
             filter_name = f'{request_param.lower()}_filters'
 
             namespace[filter_name] = cls.create_filter_method(request_param)
@@ -65,16 +63,17 @@ class HttpRequestFilter(type):
 
     @staticmethod
     def __get_common_filters(self, request) -> dict[str, str]:
+
         return dict(
             map(
                 lambda common_filter_list: (
-                    (self.__join_to if self.__join_to else '') + common_filter_list[0], common_filter_list[-1]
+                    (self._join_to if self._join_to else '') + common_filter_list[0] + '__iexact', common_filter_list[-1]
                 ),
                 filter(
                     lambda value: value is not None,
                     (
                         self.get_filter_list_or_none(request, filter_name)
-                        for filter_name in HttpRequestFilter.__common_filter_names
+                        for filter_name in HttpRequestFilter.__common_filter_names if filter_name in HttpRequestFilter
                     )
                 )
             )
@@ -88,7 +87,7 @@ class HttpRequestFilter(type):
             if timed_filter_list := self.get_filter_list_or_none(request, timed_filter_name):
                 operator = '__gte' if timed_filter_name == 'start' else '__lte'
                 timed_filters[
-                    f'{self.__join_to if self.__join_to else ""}created_at{operator}'
+                    f'{self._join_to if self._join_to else ""}created_at{operator}'
                 ] = timed_filter_list[-1]
 
         return timed_filters
@@ -122,7 +121,7 @@ class ReqFilter(metaclass=HttpRequestFilter):
 
     __available_request_params = ('GET', 'POST')
 
-    def __init__(self, request_param: str, *, request, join_to=None):
+    def __init__(self, /, request_param: str, *, request, join_to=None):
 
         assert request_param in self.__available_request_params, (
                 'Unavailable request parameter. Use %s' % ', '.join(self.__available_request_params)
@@ -131,7 +130,7 @@ class ReqFilter(metaclass=HttpRequestFilter):
 
         self.__req_param = request_param
         self.__req = request
-        self.__join_to = join_to
+        self._join_to = join_to
 
     @staticmethod
     def get_filter_list_or_none(request, filter_name: str) -> Optional[list[str]]:
@@ -140,8 +139,10 @@ class ReqFilter(metaclass=HttpRequestFilter):
             return [filter_name, filter_value]
         return None
 
-    def get_filters(self):
+    def get_filters(self, request):
+
         filter_method = getattr(self, f'{self.__req_param.lower()}_filter', None)
+
         if filter_method:
-            return filter_method(self.__req)
+            return filter_method(request)
         return {}
