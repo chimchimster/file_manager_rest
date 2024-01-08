@@ -1,5 +1,5 @@
 import abc
-from typing import Optional
+from typing import Optional, Any
 
 
 class HttpRequestFilter(type):
@@ -12,7 +12,7 @@ class HttpRequestFilter(type):
         'file_extension',
         'file_uuid',
         'status',
-        'service_name'
+        'service_name',
     )
 
     # Timed filters is intended to filter records by the timestamps.
@@ -53,7 +53,7 @@ class HttpRequestFilter(type):
 
                 cm_flt = HttpRequestFilter.__get_common_filters(self, request)
                 tm_flt = HttpRequestFilter.__get_timed_filters(self, request)
-                pg_flt = HttpRequestFilter.__get_pagination_filters(request)
+                pg_flt = HttpRequestFilter.__get_pagination_filters(self, request)
                 return {**cm_flt, **tm_flt, **pg_flt}
 
             elif request_param == 'POST':
@@ -73,7 +73,7 @@ class HttpRequestFilter(type):
                     lambda value: value is not None,
                     (
                         self.get_filter_list_or_none(request, filter_name)
-                        for filter_name in HttpRequestFilter.__common_filter_names if filter_name in HttpRequestFilter
+                        for filter_name in HttpRequestFilter.__common_filter_names if filter_name in self._allowed_filters
                     )
                 )
             )
@@ -84,7 +84,8 @@ class HttpRequestFilter(type):
 
         timed_filters = dict()
         for timed_filter_name in HttpRequestFilter.__timed_filter_names:
-            if timed_filter_list := self.get_filter_list_or_none(request, timed_filter_name):
+            if (timed_filter_name in self._allowed_filters
+                    and (timed_filter_list := self.get_filter_list_or_none(request, timed_filter_name))):
                 operator = '__gte' if timed_filter_name == 'start' else '__lte'
                 timed_filters[
                     f'{self._join_to if self._join_to else ""}created_at{operator}'
@@ -93,15 +94,17 @@ class HttpRequestFilter(type):
         return timed_filters
 
     @staticmethod
-    def __get_pagination_filters(request) -> dict[str, int]:
+    def __get_pagination_filters(self, request) -> dict[str, int]:
 
-        page = abs(int(request.GET.get('page', 1)))
-        page_size = min(abs(int(request.GET.get('page_size', 20))), 20)
+        if all(('page' in self._allowed_filters, 'page_size' in self._allowed_filters)):
+            page = abs(int(request.GET.get('page', 1)))
+            page_size = min(abs(int(request.GET.get('page_size', 20))), 20)
 
-        start_index = (page - 1) * page_size
-        end_index = start_index + page_size
+            start_index = (page - 1) * page_size
+            end_index = start_index + page_size
 
-        return {'page': start_index, 'page_size': end_index}
+            return {'page': start_index, 'page_size': end_index}
+        return {}
 
 
 class HttpRequestFilterABC(abc.ABC):
@@ -121,7 +124,7 @@ class ReqFilter(metaclass=HttpRequestFilter):
 
     __available_request_params = ('GET', 'POST')
 
-    def __init__(self, /, request_param: str, *, request, join_to=None):
+    def __init__(self, /, request_param: str, allowed_filters: set, *, request, join_to=None):
 
         assert request_param in self.__available_request_params, (
                 'Unavailable request parameter. Use %s' % ', '.join(self.__available_request_params)
@@ -129,6 +132,7 @@ class ReqFilter(metaclass=HttpRequestFilter):
         assert isinstance(join_to, (str | None)), 'Type of join_to parameter must be either str or None.'
 
         self.__req_param = request_param
+        self._allowed_filters = allowed_filters
         self.__req = request
         self._join_to = join_to
 
