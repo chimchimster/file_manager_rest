@@ -135,3 +135,13 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Celery configuration
+
+CELERY_BROKER_URL = config['CELERY']['BROKER_URL']
+
+# Filemanager (app) configuration
+
+ALLOWED_FILE_EXTENSIONS = {'.pdf', '.docx', '.pptx', '.csv'}
+
+

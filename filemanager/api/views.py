@@ -1,14 +1,16 @@
-import datetime
+from typing import Optional
 
 from django.db.models import Count, Q
 from django.http import Http404
+from django.conf import settings
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .serializers import FileSerializer
-from .models import UserFile
+from .models import UserFile, Storage
 from .utils import ReqFilter
+from .tasks import send_file_to_storage
 
 
 class ShowUserFilesDetail(APIView):
@@ -62,17 +64,6 @@ class ShowUserFilesSummaryDetail(APIView):
 
         request_filters = req_f.get_filters(request)
 
-        if not request_filters:
-            period = 'all_time'
-        else:
-            from_timestamp = request_filters.get('start', datetime.datetime.utcnow().strftime('%d-%m-%Y %H:%M:%S'))
-            to_timestamp = request_filters.get('end', datetime.datetime.utcnow().strftime('%d-%m-%Y %H:%M:%S'))
-            print(from_timestamp, to_timestamp)
-            if from_timestamp == to_timestamp:
-                period = from_timestamp
-            else:
-                period = 'from %s to %s' % (from_timestamp, to_timestamp)
-
         user_files_count = UserFile.objects.filter(
             user_id=user_id,
             **request_filters,
@@ -89,7 +80,56 @@ class ShowUserFilesSummaryDetail(APIView):
                 'pdf_files': user_files_count.get('pdf_count', 0),
                 'docx_files': user_files_count.get('docx_count', 0),
                 'pptx_files': user_files_count.get('pptx_count', 0),
-                'period': period,
             })
         except UserFile.DoesNotExist:
             raise Http404
+
+
+class UploadUserFileDetail(APIView):
+
+    def put(
+            self,
+            request,
+            user_id: int,
+            from_service: str,
+            file_name: str,
+            file_extension: str,
+    ) -> Response:
+
+        if has_error := self.check_file_extensions(file_extension):
+            return has_error
+
+        storage_object = Storage.objects.create(
+            file_uuid=file_name,
+            file_extension=file_extension,
+            service_name=from_service,
+            status='P',
+        )
+
+        user_file = UserFile.objects.create(
+            user_id=user_id,
+            file_id=storage_object,
+        )
+
+        status = send_file_to_storage(request.body, file_name, file_extension)
+
+        if status.name == 'READY':
+            user_file.status = 'R'
+            user_file.save()
+            return Response({'detail': 'Successfully uploaded file %s%s for user with id %s' % (file_name, file_extension, user_id)})
+
+        user_file.status = 'E'
+        user_file.save()
+
+        return Response({'detail': 'Error occured while uploading file.'})
+
+    @staticmethod
+    def check_file_extensions(ext: str) -> Optional[Response]:
+
+        if not ext.startswith('.'):
+            return Response({'detail': 'File extension must start with point/full stop.'})
+
+        if ext not in settings.ALLOWED_FILE_EXTENSIONS:
+            return Response({'detail': 'File extension must belong allowed collection: %s' % settings.ALLOWED_FILE_EXTENSIONS})
+
+
