@@ -7,7 +7,7 @@ class StorageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Storage
-        fields = ['file_id', 'service_name', 'file_uuid', 'file_extension', 'status', 'created_at']
+        fields = ['file_id', 'service_name', 'file_uuid', 'file_extension', 'status', 'created_at', 'updated_at']
 
     def to_representation(self, instance):
 

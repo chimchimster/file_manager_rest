@@ -36,7 +36,7 @@ def send_file_to_storage(file_data: bytes, file_name: str, file_extension: str, 
             else:
                 try:
                     bts = io.BytesIO(file_data)
-                    minio_client.put_object(bucket_name, file_name + file_extension, bts, 3)
+                    minio_client.put_object(bucket_name, file_name + file_extension, bts, -1)
                 except minio.error.MinioException:
                     storage_obj.status = 'E'
                 else:

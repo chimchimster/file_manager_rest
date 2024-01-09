@@ -1,0 +1,2 @@
+class InappropriateFileStatus(Exception):
+    pass

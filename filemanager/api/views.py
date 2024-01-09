@@ -1,17 +1,27 @@
+import configparser
 from typing import Optional
 
-from django.db.models import Count, Q
 from django.http import Http404
 from django.conf import settings
+from django.db.models import Count, Q
 from django.db import transaction, Error
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import FileSerializer, StorageSerializer
-from .models import UserFile, Storage
+from .minio_api import get_minio_client
+
 from .utils import ReqFilter
+from .models import UserFile, Storage
+from .exceptions import InappropriateFileStatus
+from .serializers import FileSerializer, StorageSerializer
+
 from .tasks import send_file_to_storage
+
+
+config = configparser.ConfigParser()
+config.read(settings.BASE_DIR / 'conf.ini')
+bucket_name = config['MinIO']['BucketName']
 
 
 class ShowUserFilesDetail(APIView):
@@ -62,10 +72,10 @@ class ShowStorageObjectDetail(APIView):
 
         try:
             file_info = Storage.objects.get(**request_filters)
-            # HERE!
+
             serializer = StorageSerializer(file_info)
 
-            return Response({'file_data': serializer})
+            return Response({'file_data': serializer.data})
         except Storage.DoesNotExist:
             raise Http404
 
@@ -92,33 +102,63 @@ class ShowUserFilesSummaryDetail(APIView):
             user_id=user_id,
             **request_filters,
         ).aggregate(
-            total_count=Count('file_id', filter=Q(file_id__status__iexact='R')),
-            pdf_count=Count(
+            total_count=Count('file_id'),
+            pdf_ready=Count(
                 'file_id',
                 filter=Q(file_id__file_extension__iexact='.pdf') & Q(file_id__status__iexact='R')
             ),
-            docx_count=Count(
+            docx_ready=Count(
                 'file_id',
                 filter=Q(file_id__file_extension__iexact='.docx') & Q(file_id__status__iexact='R')
             ),
-            pptx_count=Count(
+            pptx_ready=Count(
                 'file_id',
                 filter=Q(file_id__file_extension__iexact='.pptx') & Q(file_id__status__iexact='R')
+            ),
+            pdf_error=Count(
+                'file_id',
+                filter=Q(file_id__file_extension__iexact='.pdf') & Q(file_id__status__iexact='E')
+            ),
+            docx_error=Count(
+                'file_id',
+                filter=Q(file_id__file_extension__iexact='.docx') & Q(file_id__status__iexact='E')
+            ),
+            pptx_error=Count(
+                'file_id',
+                filter=Q(file_id__file_extension__iexact='.pptx') & Q(file_id__status__iexact='E')
+            ),
+            pdf_in_progress=Count(
+                'file_id',
+                filter=Q(file_id__file_extension__iexact='.pdf') & Q(file_id__status__iexact='P')
+            ),
+            docx_in_progress=Count(
+                'file_id',
+                filter=Q(file_id__file_extension__iexact='.docx') & Q(file_id__status__iexact='P')
+            ),
+            pptx_in_progress=Count(
+                'file_id',
+                filter=Q(file_id__file_extension__iexact='.pptx') & Q(file_id__status__iexact='P')
             ),
         )
         try:
             return Response({
                 'user_id': user_id,
                 'total_files': user_files_count.get('total_count', 0),
-                'pdf_files': user_files_count.get('pdf_count', 0),
-                'docx_files': user_files_count.get('docx_count', 0),
-                'pptx_files': user_files_count.get('pptx_count', 0),
+                'pdf_ready': user_files_count.get('pdf_ready', 0),
+                'docx_ready': user_files_count.get('docx_ready', 0),
+                'pptx_ready': user_files_count.get('pptx_ready', 0),
+                'pdf_error': user_files_count.get('pdf_error', 0),
+                'docx_error': user_files_count.get('docx_error', 0),
+                'pptx_error': user_files_count.get('pptx_error', 0),
+                'pdf_in_progress': user_files_count.get('pdf_in_progress', 0),
+                'docx_in_progress': user_files_count.get('docx_in_progress', 0),
+                'pptx_in_progress': user_files_count.get('pptx_in_progress', 0),
             })
         except UserFile.DoesNotExist:
             raise Http404
 
 
-class UploadUserFileDetail(APIView):
+class UploadUserFile(APIView):
 
     def put(
             self,
@@ -165,9 +205,56 @@ class UploadUserFileDetail(APIView):
             })
 
 
+class DownloadUserFile(APIView):
+
+    def get(self, request):
+
+        file_uuid = request.GET.get('file_uuid')
+
+        if file_uuid is None:
+            raise Http404
+
+        try:
+            storage_object = Storage.objects.get(file_uuid=file_uuid)
+        except Storage.DoesNotExist:
+            raise Http404
+        else:
+            if status := {'P': 'in progress', 'E': 'error'}.get(storage_object.status):
+
+                raise InappropriateFileStatus(
+                    'File has %s status. Only files with ready status could be downloaded.' % status
+                )
+
+            return Response({
+                'file_data': self.get_file_from_bucket(storage_object),
+                'file_extension': storage_object.file_extension,
+            })
+
+    @staticmethod
+    def get_file_from_bucket(
+            storage_object: Storage,
+            retry: int = 0
+    ) -> bytes:
+
+        if retry > 2:
+            raise Http404
+
+        minio_client = get_minio_client()
+
+        try:
+            result = minio_client.get_object(
+                bucket_name=bucket_name,
+                object_name=str(storage_object.file_uuid) + storage_object.file_extension,
+            )
+            return result.read()
+        except Http404:
+            DownloadUserFile.get_file_from_bucket(storage_object, retry + 1)
+
+
 __all__ = (
     'ShowUserFilesDetail',
     'ShowStorageObjectDetail',
     'ShowUserFilesSummaryDetail',
-    'UploadUserFileDetail',
+    'UploadUserFile',
+    'DownloadUserFile',
 )
