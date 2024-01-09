@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'django_celery_results',
     'api.apps.ApiConfig',
 ]
 
@@ -139,6 +140,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Celery configuration
 
 CELERY_BROKER_URL = config['CELERY']['BROKER_URL']
+# CELERY_RESULT_BACKEND = 'django-db'
+# DJANGO_CELERY_RESULTS_TASK_ID_MAX_LENGTH = 191
 
 # Filemanager (app) configuration
 

@@ -3,11 +3,12 @@ from typing import Optional
 from django.db.models import Count, Q
 from django.http import Http404
 from django.conf import settings
+from django.db import transaction, Error
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import FileSerializer
+from .serializers import FileSerializer, StorageSerializer
 from .models import UserFile, Storage
 from .utils import ReqFilter
 from .tasks import send_file_to_storage
@@ -33,16 +34,39 @@ class ShowUserFilesDetail(APIView):
         start_index = request_filters.pop('page')
         end_index = request_filters.pop('page_size')
 
-        user_files = UserFile.objects.filter(
-            user_id=user_id,
-            **request_filters,
-        )[start_index:end_index]
-
-        serializer = FileSerializer(user_files, many=True)
-
         try:
+            user_files = UserFile.objects.filter(
+                user_id=user_id,
+                **request_filters,
+            )[start_index:end_index]
+
+            serializer = FileSerializer(user_files, many=True)
+
             return Response({'user_id': user_id, 'files': serializer.data})
         except UserFile.DoesNotExist:
+            raise Http404
+
+
+class ShowStorageObjectDetail(APIView):
+
+    def get(self, request) -> Response:
+
+        req_f = ReqFilter(
+            'GET',
+            {'file_uuid'},
+            request=request,
+            join_to=None,
+        )
+
+        request_filters = req_f.get_filters(request)
+
+        try:
+            file_info = Storage.objects.get(**request_filters)
+            # HERE!
+            serializer = StorageSerializer(file_info)
+
+            return Response({'file_data': serializer})
+        except Storage.DoesNotExist:
             raise Http404
 
 
@@ -68,10 +92,19 @@ class ShowUserFilesSummaryDetail(APIView):
             user_id=user_id,
             **request_filters,
         ).aggregate(
-            total_count=Count('file_id'),
-            pdf_count=Count('file_id', filter=Q(file_id__file_extension__iexact='.pdf')),
-            docx_count=Count('file_id', filter=Q(file_id__file_extension__iexact='.docx')),
-            pptx_count=Count('file_id', filter=Q(file_id__file_extension__iexact='.pptx')),
+            total_count=Count('file_id', filter=Q(file_id__status__iexact='R')),
+            pdf_count=Count(
+                'file_id',
+                filter=Q(file_id__file_extension__iexact='.pdf') & Q(file_id__status__iexact='R')
+            ),
+            docx_count=Count(
+                'file_id',
+                filter=Q(file_id__file_extension__iexact='.docx') & Q(file_id__status__iexact='R')
+            ),
+            pptx_count=Count(
+                'file_id',
+                filter=Q(file_id__file_extension__iexact='.pptx') & Q(file_id__status__iexact='R')
+            ),
         )
         try:
             return Response({
@@ -99,29 +132,26 @@ class UploadUserFileDetail(APIView):
         if has_error := self.check_file_extensions(file_extension):
             return has_error
 
-        storage_object = Storage.objects.create(
-            file_uuid=file_name,
-            file_extension=file_extension,
-            service_name=from_service,
-            status='P',
-        )
+        with transaction.atomic():
+            try:
+                storage_object = Storage.objects.create(
+                    file_uuid=file_name,
+                    file_extension=file_extension,
+                    service_name=from_service,
+                )
 
-        user_file = UserFile.objects.create(
-            user_id=user_id,
-            file_id=storage_object,
-        )
+                UserFile.objects.create(
+                    user_id=user_id,
+                    file_id=storage_object,
+                )
+            except Error as e:
+                return Response({'detail': 'Could not handle operation', 'exc': str(e)})
 
-        status = send_file_to_storage(request.body, file_name, file_extension)
+        send_file_to_storage.delay(request.body, file_name, file_extension)
 
-        if status.name == 'READY':
-            user_file.status = 'R'
-            user_file.save()
-            return Response({'detail': 'Successfully uploaded file %s%s for user with id %s' % (file_name, file_extension, user_id)})
-
-        user_file.status = 'E'
-        user_file.save()
-
-        return Response({'detail': 'Error occured while uploading file.'})
+        return Response({
+            'detail': 'Uploading file %s%s for user with id %s' % (file_name, file_extension, user_id)
+        })
 
     @staticmethod
     def check_file_extensions(ext: str) -> Optional[Response]:
@@ -130,6 +160,14 @@ class UploadUserFileDetail(APIView):
             return Response({'detail': 'File extension must start with point/full stop.'})
 
         if ext not in settings.ALLOWED_FILE_EXTENSIONS:
-            return Response({'detail': 'File extension must belong allowed collection: %s' % settings.ALLOWED_FILE_EXTENSIONS})
+            return Response({
+                'detail': 'File extension must belong allowed collection: %s' % settings.ALLOWED_FILE_EXTENSIONS
+            })
 
 
+__all__ = (
+    'ShowUserFilesDetail',
+    'ShowStorageObjectDetail',
+    'ShowUserFilesSummaryDetail',
+    'UploadUserFileDetail',
+)

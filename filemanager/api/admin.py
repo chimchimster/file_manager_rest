@@ -5,7 +5,7 @@ from .models import Storage, UserFile
 @admin.register(Storage)
 class StorageFileAdmin(admin.ModelAdmin):
 
-    list_display = ['file_id', 'file_uuid', 'status', 'created_at', 'updated_at']
+    list_display = ['file_id', 'file_uuid', 'status', 'created_at', 'updated_at', 'file_extension']
     list_filter = ['status', 'created_at', 'updated_at']
     list_editable = ['status']
 
