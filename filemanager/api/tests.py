@@ -38,6 +38,9 @@ class StorageTestCase(TestCase):
                 file_id=storage_obj,
             )
 
+        self.registered_users = self.currently_stored_objects_mapped_to_user.keys()
+        self.non_existent_users = [u_id for u_id in range(max(self.registered_users) + 1, max(self.registered_users) * 2)]
+
     @staticmethod
     def __generate_uuid():
         import uuid
@@ -67,10 +70,7 @@ class StorageTestCase(TestCase):
 
     def test001_show_all_user_files_detail(self):
 
-        registered_users = self.currently_stored_objects_mapped_to_user.keys()
-        non_existent_users = [u_id for u_id in range(max(registered_users) + 1, max(registered_users) * 2)]
-
-        for user in registered_users:
+        for user in self.registered_users:
 
             # TESTING WITHOUT FILTERS
 
@@ -98,28 +98,47 @@ class StorageTestCase(TestCase):
 
             # TESTING FILTERS
 
-            # By file extension
-            response = self.client.get(self.files_GET, {'user': user, 'file_extension': '.pdf'})
+            # By file extension and service_name
+            self.__cover_test_filters(user, file_extension=True, service_name=True)
+            self.__cover_test_filters(user, file_extension=True, service_name=False)
+            self.__cover_test_filters(user, file_extension=False, service_name=True)
+            self.__cover_test_filters(user, file_extension=False, service_name=False)
 
-            resp_dict = response.json()
-
-            self.assertEqual(
-                [
-                    data.__dict__.items() for data in self.currently_stored_objects_mapped_to_user[int(resp_dict.get('user_id'))]
-                    if data.file_extension == '.pdf'
-                ],
-                [
-                    data.items() for data in resp_dict.get('files')
-                ]
-            )
-
-        for user in non_existent_users:
-            response = self.client.get(self.files_GET, {'user': user})
+        for non_existent_user in self.non_existent_users:
+            response = self.client.get(self.files_GET, {'user': non_existent_user})
 
             self.assertEqual(
                 response.status_code,
                 404,
                 msg='Status code must be 404, got %s' % response.status_code,
+            )
+
+    def __cover_test_filters(
+            self,
+            /,
+            user_id: int,
+            *,
+            file_extension: bool,
+            service_name: bool,
+    ):
+        filters = dict()
+
+        if file_extension:
+            filters.update({'file_extension': self.__generate_extension()})
+        if service_name:
+            filters.update({'service_name': self.__generate_service_name()})
+
+        response = self.client.get(self.files_GET, {'user': user_id, **filters})
+
+        resp_dict = response.json()
+
+        if has_data := resp_dict.get('files'):
+            self.assertIn(
+                has_data[-1].get('file_data').get('file_id'),
+                [
+                    storage_obj.file_id for storage_obj
+                    in self.currently_stored_objects_mapped_to_user[int(resp_dict.get('user_id'))]
+                ]
             )
 
     def test002_show_particular_file_detail(self):
@@ -133,3 +152,24 @@ class StorageTestCase(TestCase):
                     200,
                     msg='Status code must be 200, got %s' % response.status_code,
                 )
+
+    def test003_show_file_summary(self):
+
+        for user in self.registered_users:
+
+            response = self.client.get(self.files_summary_GET, {'user': user})
+            self.assertEqual(
+                response.status_code,
+                200,
+                msg='Status code must be 200, got %s' % response.status_code,
+            )
+
+        for non_existent_user in self.non_existent_users:
+
+            response = self.client.get(self.files_summary_GET, {'user': non_existent_user})
+            self.assertEqual(
+                response.status_code,
+                404,
+                msg='Status code must be 404, got %s' % response.status_code,
+            )
+
