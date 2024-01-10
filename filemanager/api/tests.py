@@ -1,39 +1,135 @@
-from django.test import TestCase
-from .models import Storage
+import random
+
+from django.test import TestCase, Client
+from django.conf import settings
+from .models import Storage, UserFile
 
 
 class StorageTestCase(TestCase):
 
     def setUp(self):
 
+        self.client = Client()
+
+        api_route = '/api/v1/'
+        self.files_GET = api_route + 'files/'
+        self.files_file_GET = api_route + 'files/file/'
+        self.files_summary_GET = api_route + 'files/summary/'
+        self.files_file_download_GET = api_route + 'files/file/download/'
+        self.files_file_upload_PUT = api_route + 'files/file/upload/'
+
+        self.currently_stored_objects_mapped_to_user = dict()
         for file_name, file_extension, service_name in self.__generate_storage_data():
-            Storage.objects.create(
+            storage_obj = Storage.objects.create(
                 file_uuid=file_name,
                 file_extension=file_extension,
-                service_name=service_name
+                service_name=service_name,
+            )
+
+            user_id = next(self.__generate_user_id())
+
+            if user_id not in self.currently_stored_objects_mapped_to_user:
+                self.currently_stored_objects_mapped_to_user[user_id] = [storage_obj]
+            else:
+                self.currently_stored_objects_mapped_to_user[user_id].append(storage_obj)
+
+            UserFile.objects.create(
+                user_id=user_id,
+                file_id=storage_obj,
             )
 
     @staticmethod
     def __generate_uuid():
         import uuid
-        yield uuid.uuid4()
+        return uuid.uuid4()
 
     @staticmethod
     def __generate_extension():
-        import random
         available_extensions = ('.pdf', '.docx', '.pptx', '.csv')
 
-        yield random.choice(available_extensions)
+        return random.choice(available_extensions)
 
     @staticmethod
     def __generate_service_name():
-        import random
+
         available_service_names = ('export', 'mail')
 
-        yield random.choice(available_service_names)
+        return random.choice(available_service_names)
+
+    @staticmethod
+    def __generate_user_id():
+        yield random.randint(0, 150)
 
     def __generate_storage_data(self):
 
-        yield from self.__generate_uuid()
-        yield from self.__generate_extension()
-        yield from self.__generate_service_name()
+        for _ in range(1000):
+            yield self.__generate_uuid(), self.__generate_extension(), self.__generate_service_name()
+
+    def test001_show_all_user_files_detail(self):
+
+        registered_users = self.currently_stored_objects_mapped_to_user.keys()
+        non_existent_users = [u_id for u_id in range(max(registered_users) + 1, max(registered_users) * 2)]
+
+        for user in registered_users:
+
+            # TESTING WITHOUT FILTERS
+
+            response = self.client.get(self.files_GET, {'user': user})
+
+            self.assertEqual(
+                response.status_code,
+                200,
+                msg='Status code must be 200, got %s' % response.status_code,
+            )
+
+            resp_dict = response.json()
+
+            self.assertEqual(
+                len(
+                    self.currently_stored_objects_mapped_to_user[
+                        int(resp_dict.get('user_id'))
+                    ]
+                ),
+                len(
+                    resp_dict.get('files')
+                ),
+                msg='User with id %s contains wrong Storage objects' % resp_dict.get('user_id'),
+            )
+
+            # TESTING FILTERS
+
+            # By file extension
+            response = self.client.get(self.files_GET, {'user': user, 'file_extension': '.pdf'})
+
+            resp_dict = response.json()
+
+            self.assertEqual(
+                [
+                    data.__dict__.items() for data in self.currently_stored_objects_mapped_to_user[int(resp_dict.get('user_id'))]
+                    if data.file_extension == '.pdf'
+                ],
+                [
+                    data.items() for data in resp_dict.get('files')
+                ]
+            )
+
+        for user in non_existent_users:
+            response = self.client.get(self.files_GET, {'user': user})
+
+            self.assertEqual(
+                response.status_code,
+                404,
+                msg='Status code must be 404, got %s' % response.status_code,
+            )
+
+    def test002_show_particular_file_detail(self):
+
+        for storage_objects in self.currently_stored_objects_mapped_to_user.values():
+
+            for storage_object in storage_objects:
+                response = self.client.get(self.files_file_GET, {'file_uuid': storage_object.file_uuid})
+                self.assertEqual(
+                    response.status_code,
+                    200,
+                    msg='Status code must be 200, got %s' % response.status_code,
+                )

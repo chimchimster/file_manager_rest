@@ -44,17 +44,17 @@ class ShowUserFilesDetail(APIView):
         start_index = request_filters.pop('page')
         end_index = request_filters.pop('page_size')
 
-        try:
-            user_files = UserFile.objects.filter(
-                user_id=user_id,
-                **request_filters,
-            )[start_index:end_index]
+        user_files = UserFile.objects.filter(
+            user_id=user_id,
+            **request_filters,
+        )[start_index:end_index]
 
-            serializer = FileSerializer(user_files, many=True)
+        serializer = FileSerializer(user_files, many=True)
 
-            return Response({'user_id': user_id, 'files': serializer.data})
-        except UserFile.DoesNotExist:
+        if not serializer.data:
             raise Http404
+
+        return Response({'user_id': user_id, 'files': serializer.data})
 
 
 class ShowStorageObjectDetail(APIView):
