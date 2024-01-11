@@ -38,7 +38,9 @@ class Storage(models.Model):
             'onclick="function fetchData() {{fetch({}).then(alert(1););}}()">',
             self.__form_url_to_download_file(),
         )
-
+    """fetch('http://localhost:8001/api/v1/files/file/download/?file_uuid=af28621a-0b81-4eac-b1dd-648386552611')
+    .then(response => response.json())
+    .then(data => alert(data));"""
     def __form_url_to_download_file(self):
 
         return '%sdownload/?file_uuid=%s' % (settings.REST_URL + '/api/v1/files/file/', self.file_uuid)
