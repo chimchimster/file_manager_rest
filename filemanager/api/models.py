@@ -1,4 +1,7 @@
+from django.contrib import admin
+from django.utils.html import format_html
 from django.db import models
+from django.conf import settings
 from django.utils.timezone import now
 
 
@@ -19,6 +22,26 @@ class Storage(models.Model):
 
     class Meta:
         index_together = ('file_uuid', 'file_extension')
+
+    @admin.display(description='Файл')
+    def colored_filename(self):
+        return format_html(
+            '<span style="color: #000000;" onmouseover="this.style.color=\'#0046ff\'" onmouseout="this.style.color=\'#000000\'">{}</span>',
+            '%s%s' % (self.file_uuid, self.file_extension),
+            )
+
+    @admin.display(description='Загрузка файла')
+    def download_file(self):
+
+        return format_html(
+            '<input class="default" type="submit" name="download_file" value="Скачать файл" '
+            'onclick="function fetchData() {{fetch({}).then(alert(1););}}()">',
+            self.__form_url_to_download_file(),
+        )
+
+    def __form_url_to_download_file(self):
+
+        return '%sdownload/?file_uuid=%s' % (settings.REST_URL + '/api/v1/files/file/', self.file_uuid)
 
 
 class UserFile(models.Model):

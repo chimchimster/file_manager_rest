@@ -27,9 +27,12 @@ SECRET_KEY = config['DEPLOY MODE']['SecretKey']
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+if DEBUG:
+    REST_URL = 'http://localhost:8001'
+else:
+    # For now, it's impossible to know what host will be used for REST
+    REST_URL = ALLOWED_HOSTS[-1] if ALLOWED_HOSTS else ''
 
 # Application definition
 
@@ -41,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'corsheaders',
     'django_celery_results',
     'api.apps.ApiConfig',
 ]
@@ -57,6 +61,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -144,3 +149,9 @@ CELERY_BROKER_URL = config['CELERY']['BROKER_URL']
 # Filemanager (app) configuration
 
 ALLOWED_FILE_EXTENSIONS = {'.pdf', '.docx', '.pptx', '.csv'}
+
+# CORS configuration
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:8001',
+]
