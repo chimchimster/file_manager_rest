@@ -14,7 +14,7 @@ urlpatterns = [
 
     # PUT methods
     path(
-        'files/file/upload/<int:user_id>/<str:from_service>/<str:file_name>/<str:file_extension>/',
+        'files/file/upload/<int:user_id>/<str:from_service>/<str:file_uuid>/<str:file_extension>/',
         UploadUserFile.as_view(),
         name='user-files-upload'
     ),

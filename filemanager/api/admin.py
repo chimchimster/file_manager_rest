@@ -25,6 +25,11 @@ class StorageFileAdmin(admin.ModelAdmin):
     show_full_result_count = True
     save_on_top = True
 
+    class Media:
+        js = (
+            'js/download_file.js',
+        )
+
 
 @admin.register(UserFile)
 class UserFileAdmin(admin.ModelAdmin):

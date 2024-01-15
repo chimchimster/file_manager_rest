@@ -1,6 +1,7 @@
-import abc
+import uuid
+from typing import Optional, Any
 
-from typing import Optional
+from .exceptions import *
 
 
 class HttpRequestFilter(type):
@@ -108,19 +109,6 @@ class HttpRequestFilter(type):
         return {}
 
 
-class HttpRequestFilterABC(abc.ABC):
-
-    @staticmethod
-    @abc.abstractmethod
-    def get_filter_list_or_none(request, filter_name: str) -> Optional[list[str, str]]:
-        """ Based on filter name availability inside one of HTTP method
-        namespace returns collection of filter name and its value. Otherwise, returns None. """
-
-    @abc.abstractmethod
-    def get_filters(self):
-        """ Returns dictionary with all filters from Request. """
-
-
 class ReqFilter(metaclass=HttpRequestFilter):
 
     __available_request_params = ('GET', 'POST')
@@ -151,3 +139,95 @@ class ReqFilter(metaclass=HttpRequestFilter):
         if filter_method:
             return filter_method(request)
         return {}
+
+
+class ParamsChecker:
+
+    __available_check_methods = {}
+
+    def __new__(cls, *args, **kwargs):
+
+        instance = super().__new__(cls)
+
+        cls.__available_check_methods = {
+            'user': instance.__check_user,
+            'uuid': instance.__check_uuid,
+            'status': instance.__check_status,
+            'extension': instance.__check_extension,
+            'pagination': instance.__check_pagination,
+            'service': instance.__check_service,
+        }
+
+        return instance
+
+    def __call__(self, name: str, value: Any):
+
+        check_method = self.__available_check_methods.get(name)
+        if check_method is not None:
+            check_method(value)
+        else:
+            raise ValueError('Invalid check %s' % name)
+
+    @staticmethod
+    def __check_user(value):
+        try:
+            u_id = int(value)
+            if u_id <= 0:
+                raise ValueError("User ID must be a positive integer.")
+        except (TypeError, ValueError):
+            raise WrongUserIDFormat(
+                400,
+                'Wrong user ID format.'
+            )
+
+    @staticmethod
+    def __check_uuid(value):
+        try:
+            uuid_obj = uuid.UUID(value)
+            if str(uuid_obj) != value:
+                raise ValueError('String is not valid UUID.')
+        except (TypeError, ValueError):
+            raise WrongUserIDFormat(
+                400,
+                'Wrong file uuid format.'
+            )
+
+    @staticmethod
+    def __check_status(value):
+        if value not in ('P', 'R', 'E'):
+            raise WrongStatusFormat(
+                400,
+                'Wrong file status format.'
+            )
+
+    @staticmethod
+    def __check_extension(value):
+        if value not in ('.pdf', '.docx', '.xlsx', '.csv'):
+            raise WrongFileExtension(
+                400,
+                'Wrong file extension format.'
+            )
+
+    @staticmethod
+    def __check_pagination(value):
+        try:
+            vl = int(value)
+            if vl <= 0:
+                raise ValueError('Pagination value must be positive integer.')
+        except (TypeError, ValueError):
+            raise WrongPaginationValue(
+                400,
+                'Pagination value must be positive integer.'
+            )
+
+    @staticmethod
+    def __check_service(value):
+        if value not in ('export', 'mail'):
+            raise WrongService(
+                400,
+                'Uploading files from not known service is restricted.'
+            )
+
+    @staticmethod
+    def __check_page(value):
+        pass
