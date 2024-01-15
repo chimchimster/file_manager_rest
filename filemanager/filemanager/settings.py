@@ -37,26 +37,22 @@ else:
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
+    # 'django.contrib.admin',
+    'api.apps.iMASAdminConfig',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'api.apps.ApiConfig',
     'rest_framework',
     'corsheaders',
     'django_celery_results',
-    'api.apps.ApiConfig',
 ]
 
-# REST definition
+ADMIN_SITE = 'api.admin.imas_admin'
 
-# REST_FRAMEWORK = {
-#
-#     'DEFAULT_PERMISSION_CLASSES': [
-#         'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
-#     ]
-# }
+# Middlewares definition
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -149,6 +145,7 @@ CELERY_BROKER_URL = config['CELERY']['BROKER_URL']
 # Filemanager (app) configuration
 
 ALLOWED_FILE_EXTENSIONS = {'.pdf', '.docx', '.pptx', '.csv'}
+DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800000
 
 # CORS configuration
 

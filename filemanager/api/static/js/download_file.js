@@ -1,4 +1,4 @@
-function downloadFile(fileData, fileName) {
+function downloadFile(fileData) {
 		const blob = new Blob([fileData], { type: 'application/octet-stream' });
 		const link = document.createElement('a');
 		link.href = URL.createObjectURL(blob);

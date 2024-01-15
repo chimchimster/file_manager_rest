@@ -6,16 +6,18 @@ from django.conf import settings
 from django.db.models import Count, Q
 from django.db import transaction, Error
 from django.core.exceptions import ObjectDoesNotExist
+from django.http import HttpResponse
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .minio_api import get_minio_client
 
-from .utils import ReqFilter, ParamsChecker
+from .utils import ReqFilter
 from .models import UserFile, Storage
 from .exceptions import *
 from .serializers import FileSerializer, StorageSerializer
+from .middlewares import validate_http_get_params
 
 from .tasks import send_file_to_storage
 
@@ -27,29 +29,16 @@ bucket_name = config['MinIO']['BucketName']
 
 class ShowUserFilesDetail(APIView):
 
+    @validate_http_get_params
     def get(self, request) -> Response:
 
-        r_get = request.GET
-
-        user_id = r_get.get('user')
+        user_id = request.GET.get('user')
 
         if user_id is None:
             raise MissingParameter(
                 400,
                 'Missing parameter "user".'
             )
-
-        params_map = {
-            'user': user_id,
-            'uuid': r_get.get('file_uuid'),
-            'extension': r_get.get('file_extension'),
-            'status': r_get.get('status'),
-            'service': r_get.get('service_name'),
-        }
-        params_checker = ParamsChecker()
-        for name, value in params_map.items():
-            if value is not None:
-                params_checker(name, value)
 
         req_f = ReqFilter(
             'GET',
@@ -80,6 +69,7 @@ class ShowUserFilesDetail(APIView):
 
 class ShowStorageObjectDetail(APIView):
 
+    @validate_http_get_params
     def get(self, request) -> Response:
 
         file_uuid = request.GET.get('file_uuid')
@@ -89,9 +79,6 @@ class ShowStorageObjectDetail(APIView):
                 400,
                 'Missing parameter "file_uuid".'
             )
-
-        params_checker = ParamsChecker()
-        params_checker('uuid', file_uuid)
 
         req_f = ReqFilter(
             'GET',
@@ -122,26 +109,16 @@ class ShowStorageObjectDetail(APIView):
 
 class ShowUserFilesSummaryDetail(APIView):
 
+    @validate_http_get_params
     def get(self, request) -> Response:
 
-        r_get = request.GET
-        user_id = r_get.get('user')
+        user_id = request.GET.get('user')
 
         if user_id is None:
             raise MissingParameter(
                 400,
                 'Missing parameter "user".'
             )
-
-        params_checker = ParamsChecker()
-        params_checker('user', user_id)
-
-        start = r_get.get('start')
-        end = r_get.get('end')
-        if start is not None:
-            params_checker('pagination', start)
-        if end is not None:
-            params_checker('pagination', end)
 
         req_f = ReqFilter(
             'GET',
@@ -205,21 +182,13 @@ class ShowUserFilesSummaryDetail(APIView):
         else:
             return Response({
                 'user_id': user_id,
-                'total_files': user_files_count.get('total_count', 0),
-                'pdf_ready': user_files_count.get('pdf_ready', 0),
-                'docx_ready': user_files_count.get('docx_ready', 0),
-                'pptx_ready': user_files_count.get('pptx_ready', 0),
-                'pdf_error': user_files_count.get('pdf_error', 0),
-                'docx_error': user_files_count.get('docx_error', 0),
-                'pptx_error': user_files_count.get('pptx_error', 0),
-                'pdf_in_progress': user_files_count.get('pdf_in_progress', 0),
-                'docx_in_progress': user_files_count.get('docx_in_progress', 0),
-                'pptx_in_progress': user_files_count.get('pptx_in_progress', 0),
+                **user_files_count
             })
 
 
 class UploadUserFile(APIView):
 
+    @validate_http_get_params
     def put(
             self,
             request,
@@ -228,12 +197,6 @@ class UploadUserFile(APIView):
             file_uuid: str,
             file_extension: str,
     ) -> Response:
-
-        params_checker = ParamsChecker()
-        params_checker('user', user_id)
-        params_checker('uuid', file_uuid)
-        params_checker('extension', file_extension)
-        params_checker('service', from_service)
 
         if has_error := self.check_file_extensions(file_extension):
             return has_error
@@ -256,10 +219,10 @@ class UploadUserFile(APIView):
                     'Server is unable to store the representation.'
                 )
 
-        send_file_to_storage.delay(request.body, file_name, file_extension)
+        send_file_to_storage.delay(request.body, file_uuid, file_extension)
 
         return Response({
-            'detail': 'Uploading file %s%s for user with id %s' % (file_name, file_extension, user_id)
+            'detail': 'Uploading file %s%s for user with id %s' % (file_uuid, file_extension, user_id)
         })
 
     @staticmethod
@@ -276,6 +239,7 @@ class UploadUserFile(APIView):
 
 class DownloadUserFile(APIView):
 
+    @validate_http_get_params
     def get(self, request):
 
         file_uuid = request.GET.get('file_uuid')
@@ -305,10 +269,9 @@ class DownloadUserFile(APIView):
 
             file = self.get_file_from_bucket(storage_object)
 
-            return Response({
-                'file_data': file,
-                'file_name': file_name,
-            })
+            return HttpResponse({
+                file,
+            }, content_type='application/octet-stream')
 
     @staticmethod
     def __get_filename(obj):
@@ -321,7 +284,7 @@ class DownloadUserFile(APIView):
     @staticmethod
     def get_file_from_bucket(
             storage_object: Storage,
-            retry: int = 0
+            retry: int = 0,
     ) -> bytes:
 
         if retry > 2:
@@ -337,6 +300,7 @@ class DownloadUserFile(APIView):
                 bucket_name=bucket_name,
                 object_name=str(storage_object.file_uuid) + storage_object.file_extension,
             )
+
             return result.read()
         except minio.error.MinioException:
             DownloadUserFile.get_file_from_bucket(storage_object, retry + 1)

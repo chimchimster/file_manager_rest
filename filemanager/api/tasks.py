@@ -1,6 +1,7 @@
 import io
 import configparser
 
+import celery
 from celery import shared_task
 from django.conf import settings
 from django.db import transaction
@@ -14,7 +15,16 @@ config.read(settings.BASE_DIR / 'conf.ini')
 bucket_name = config['MinIO']['BucketName']
 
 
-@shared_task
+class CeleryTask(celery.Task):
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        if isinstance(exc, ValueError):
+            raise ValueError
+
+    def run(self, *args, **kwargs):
+        pass
+
+
+@shared_task(base=CeleryTask)
 def send_file_to_storage(file_data: bytes, file_name: str, file_extension: str, retries: int = 0):
 
     if retries > 2:
@@ -36,8 +46,8 @@ def send_file_to_storage(file_data: bytes, file_name: str, file_extension: str, 
             else:
                 try:
                     bts = io.BytesIO(file_data)
-                    minio_client.put_object(bucket_name, file_name + file_extension, bts, -1)
-                except minio.error.MinioException:
+                    minio_client.put_object(bucket_name, file_name + file_extension, bts, len(file_data))
+                except (minio.error.MinioException, ValueError):
                     storage_obj.status = 'E'
                 else:
                     storage_obj.status = 'R'

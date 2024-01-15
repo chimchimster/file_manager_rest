@@ -2,7 +2,6 @@ from django.contrib import admin
 from .models import Storage, UserFile
 
 
-@admin.register(Storage)
 class StorageFileAdmin(admin.ModelAdmin):
 
     # Displaying
@@ -31,7 +30,6 @@ class StorageFileAdmin(admin.ModelAdmin):
         )
 
 
-@admin.register(UserFile)
 class UserFileAdmin(admin.ModelAdmin):
 
     # Displaying
@@ -46,3 +44,15 @@ class UserFileAdmin(admin.ModelAdmin):
 
     # Filtering
     list_filter = ['file_id__status', 'file_id__created_at', 'file_id__updated_at', 'file_id__service_name']
+
+
+class iMASAdmin(admin.AdminSite):
+    site_title = 'Админ панель файлового хранилища iMAS'
+    site_header = 'Админ панель файлового хранилища iMAS'
+    index_title = 'Админ панель'
+
+
+imas_admin = iMASAdmin(name='imas')
+
+imas_admin.register(Storage, admin_class=StorageFileAdmin)
+imas_admin.register(UserFile, admin_class=UserFileAdmin)

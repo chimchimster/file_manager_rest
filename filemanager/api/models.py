@@ -39,7 +39,7 @@ class Storage(models.Model):
                 f'let endpoint = \'{self.__form_url_to_download_file(self.file_uuid)}\';'
                 'fetch(endpoint)'
                 '.then(response => response.json())'
-                '.then(data => downloadFile(data.file_data, data.file_name));">',
+                '.then(data => downloadFile(data));">',
                 self.__form_url_to_download_file(self.file_uuid),
             )
 

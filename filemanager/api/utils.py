@@ -151,11 +151,12 @@ class ParamsChecker:
 
         cls.__available_check_methods = {
             'user': instance.__check_user,
-            'uuid': instance.__check_uuid,
+            'file_uuid': instance.__check_uuid,
             'status': instance.__check_status,
-            'extension': instance.__check_extension,
-            'pagination': instance.__check_pagination,
-            'service': instance.__check_service,
+            'file_extension': instance.__check_extension,
+            'start': instance.__check_pagination,
+            'end': instance.__check_pagination,
+            'service_name': instance.__check_service,
         }
 
         return instance
