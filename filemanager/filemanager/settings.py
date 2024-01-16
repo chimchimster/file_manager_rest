@@ -23,16 +23,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 config = configparser.ConfigParser()
 config.read(BASE_DIR / 'conf.ini')
+
 SECRET_KEY = config['DEPLOY MODE']['SecretKey']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
-if DEBUG:
-    REST_URL = 'http://localhost:8001'
-else:
-    # For now, it's impossible to know what host will be used for REST
-    REST_URL = ALLOWED_HOSTS[-1] if ALLOWED_HOSTS else ''
+DEBUG = config['DEPLOY MODE']['DEBUG']
 
 # Application definition
 
@@ -66,7 +61,7 @@ ROOT_URLCONF = 'filemanager.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -120,7 +115,7 @@ TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
@@ -139,16 +134,18 @@ CELERY_BROKER_URL = config['CELERY']['BROKER_URL']
 
 # Filemanager (app) configuration
 
-ALLOWED_FILE_EXTENSIONS = {'.pdf', '.docx', '.pptx', '.csv'}
-DATA_UPLOAD_MAX_MEMORY_SIZE = 209715200
+ALLOWED_FILE_EXTENSIONS = config['DEPLOY MODE']['AllowedFilesExtensions'].split('\n')
 
-# CORS configuration
+ALLOWED_SERVICE_NAMES = config['DEPLOY MODE']['AllowedServiceNames'].split('\n')
 
-CORS_ALLOWED_ORIGINS = [
-    'http://127.0.0.1:8001',
-    'http://localhost:8001',
-]
+DATA_UPLOAD_MAX_MEMORY_SIZE = int(config['DEPLOY MODE']['DataUploadMaxMemorySize'])
+
+CORS_ALLOWED_ORIGINS = config['DEPLOY MODE']['CORSAllowedOrigins'].split('\n')
+
+ALLOWED_HOSTS = config['DEPLOY MODE']['AllowedHosts'].split('\n')
 
 # Common configurations
 
 FIRST_DAY_OF_WEEK = 1
+
+MAX_PAGE_SIZE = int(config['DEPLOY MODE']['MaxPageSize'])

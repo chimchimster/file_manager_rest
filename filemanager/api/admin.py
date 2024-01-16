@@ -47,9 +47,18 @@ class UserFileAdmin(admin.ModelAdmin):
 
 
 class iMASAdmin(admin.AdminSite):
-    site_title = 'Админ панель файлового хранилища iMAS'
-    site_header = 'Админ панель файлового хранилища iMAS'
+    site_title = 'Админ панель файлового хранилища'
+    site_header = 'Админ панель файлового хранилища'
     index_title = 'Админ панель'
+
+    def index(self, request, extra_context=None):
+
+        response = super().index(request, extra_context)
+
+        for k, v in response.context_data.items():
+            print(k, v, end='\n')
+
+        return response
 
 
 imas_admin = iMASAdmin(name='imas')

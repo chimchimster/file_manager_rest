@@ -68,7 +68,7 @@ class Storage(models.Model):
 
     @staticmethod
     def __form_url_to_download_file(file_uuid):
-        return settings.REST_URL + reverse('api:download-user-file') + '?file_uuid=%s' % file_uuid
+        return reverse('api:download-user-file') + '?file_uuid=%s' % file_uuid
 
 
 class UserFile(models.Model):

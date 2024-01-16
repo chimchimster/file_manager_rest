@@ -1,5 +1,8 @@
+import datetime
 import uuid
 from typing import Optional, Any
+
+from django.conf import settings
 
 from .exceptions import *
 
@@ -100,7 +103,7 @@ class HttpRequestFilter(type):
 
         if all(('page' in self._allowed_filters, 'page_size' in self._allowed_filters)):
             page = abs(int(request.GET.get('page', 1)))
-            page_size = min(abs(int(request.GET.get('page_size', 20))), 20)
+            page_size = min(abs(int(request.GET.get('page_size', 20))), settings.MAX_PAGE_SIZE)
 
             start_index = (page - 1) * page_size
             end_index = start_index + page_size
@@ -154,8 +157,8 @@ class ParamsChecker:
             'file_uuid': instance.__check_uuid,
             'status': instance.__check_status,
             'file_extension': instance.__check_extension,
-            'start': instance.__check_pagination,
-            'end': instance.__check_pagination,
+            'start': instance.__check_date,
+            'end': instance.__check_date,
             'service_name': instance.__check_service,
         }
 
@@ -203,27 +206,28 @@ class ParamsChecker:
 
     @staticmethod
     def __check_extension(value):
-        if value not in ('.pdf', '.docx', '.xlsx', '.csv'):
+        if value not in settings.ALLOWED_FILE_EXTENSIONS:
             raise WrongFileExtension(
                 400,
                 'Wrong file extension format.'
             )
 
     @staticmethod
-    def __check_pagination(value):
+    def __check_date(value):
         try:
-            vl = int(value)
-            if vl <= 0:
-                raise ValueError('Pagination value must be positive integer.')
-        except (TypeError, ValueError):
-            raise WrongPaginationValue(
-                400,
-                'Pagination value must be positive integer.'
-            )
+            datetime.datetime.strptime(value, "%Y-%m-%d")
+        except ValueError:
+            try:
+                datetime.datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                raise WrongPaginationValue(
+                    400,
+                    'String must be a valid type of date or datetime.'
+                )
 
     @staticmethod
     def __check_service(value):
-        if value not in ('export', 'mail'):
+        if value not in settings.ALLOWED_SERVICE_NAMES:
             raise WrongService(
                 400,
                 'Uploading files from not known service is restricted.'
