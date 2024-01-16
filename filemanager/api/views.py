@@ -265,21 +265,12 @@ class DownloadUserFile(APIView):
                     'File has %s status. Only files with ready status could be downloaded.' % status
                 )
 
-            file_name = self.__get_filename(storage_object)
-
             file = self.get_file_from_bucket(storage_object)
-
-            return HttpResponse({
+            response = HttpResponse({
                 file,
             }, content_type='application/octet-stream')
 
-    @staticmethod
-    def __get_filename(obj):
-        return '%s_%s%s' % (
-            obj.service_name,
-            obj.created_at.strftime('%Y-%m-%d_%H-%M'),
-            obj.file_extension
-        )
+            return response
 
     @staticmethod
     def get_file_from_bucket(

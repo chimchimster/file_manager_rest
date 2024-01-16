@@ -10,8 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
-from pathlib import Path
 import configparser
+from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,7 +37,6 @@ else:
 # Application definition
 
 INSTALLED_APPS = [
-    # 'django.contrib.admin',
     'api.apps.iMASAdminConfig',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -47,10 +46,7 @@ INSTALLED_APPS = [
     'api.apps.ApiConfig',
     'rest_framework',
     'corsheaders',
-    'django_celery_results',
 ]
-
-ADMIN_SITE = 'api.admin.imas_admin'
 
 # Middlewares definition
 
@@ -84,7 +80,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'filemanager.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
@@ -145,7 +140,7 @@ CELERY_BROKER_URL = config['CELERY']['BROKER_URL']
 # Filemanager (app) configuration
 
 ALLOWED_FILE_EXTENSIONS = {'.pdf', '.docx', '.pptx', '.csv'}
-DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800000
+DATA_UPLOAD_MAX_MEMORY_SIZE = 209715200
 
 # CORS configuration
 
@@ -153,3 +148,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:8001',
     'http://localhost:8001',
 ]
+
+# Common configurations
+
+FIRST_DAY_OF_WEEK = 1

@@ -18,7 +18,6 @@ from django.urls import path, include
 from api.admin import imas_admin
 
 urlpatterns = [
-
     path('imas/', imas_admin.urls),
     path('api/v1/', include('api.urls', namespace='api')),
 ]
