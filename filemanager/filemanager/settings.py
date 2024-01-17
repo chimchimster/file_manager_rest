@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'api.apps.ApiConfig',
     'rest_framework',
     'corsheaders',
+    'drf_yasg',
 ]
 
 # Middlewares definition
@@ -135,13 +136,11 @@ CELERY_BROKER_URL = config['CELERY']['BROKER_URL']
 # Filemanager (app) configuration
 
 ALLOWED_FILE_EXTENSIONS = config['DEPLOY MODE']['AllowedFilesExtensions'].split('\n')
-
 ALLOWED_SERVICE_NAMES = config['DEPLOY MODE']['AllowedServiceNames'].split('\n')
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = int(config['DEPLOY MODE']['DataUploadMaxMemorySize'])
 
 CORS_ALLOWED_ORIGINS = config['DEPLOY MODE']['CORSAllowedOrigins'].split('\n')
-
 ALLOWED_HOSTS = config['DEPLOY MODE']['AllowedHosts'].split('\n')
 
 # Common configurations
@@ -149,3 +148,24 @@ ALLOWED_HOSTS = config['DEPLOY MODE']['AllowedHosts'].split('\n')
 FIRST_DAY_OF_WEEK = 1
 
 MAX_PAGE_SIZE = int(config['DEPLOY MODE']['MaxPageSize'])
+
+# REST configuration
+
+REST_FRAMEWORK = {
+    # 'DEFAULT_RENDERER_CLASSES': [
+    #     'rest_framework.renderers.JSONRenderer',
+    # ],
+    # 'DEFAULT_PARSER_CLASSES': [
+    #     'rest_framework.parsers.JSONParser',
+    # ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
+}
+
+# Swagger configuration
+
+SWAGGER_SETTINGS = {
+    'USE_SESSION_AUTH': False,
+    'SECURITY_DEFINITIONS': {},
+}

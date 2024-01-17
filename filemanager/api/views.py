@@ -18,8 +18,10 @@ from .models import UserFile, Storage
 from .exceptions import *
 from .serializers import FileSerializer, StorageSerializer
 from .middlewares import validate_http_get_params
-
+from .permissions import AllowUploadPermission
 from .tasks import send_file_to_storage
+from .authentication import CsrfExemptSessionAuthentication
+from .swagger_docs import *
 
 
 config = configparser.ConfigParser()
@@ -29,6 +31,7 @@ bucket_name = config['MinIO']['BucketName']
 
 class ShowUserFilesDetail(APIView):
 
+    @show_user_files_detail_swagger_schema()
     @validate_http_get_params
     def get(self, request) -> Response:
 
@@ -69,6 +72,7 @@ class ShowUserFilesDetail(APIView):
 
 class ShowStorageObjectDetail(APIView):
 
+    @show_storage_object_detail_swagger_schema()
     @validate_http_get_params
     def get(self, request) -> Response:
 
@@ -109,6 +113,7 @@ class ShowStorageObjectDetail(APIView):
 
 class ShowUserFilesSummaryDetail(APIView):
 
+    @show_user_files_summary_detail_swagger_schema()
     @validate_http_get_params
     def get(self, request) -> Response:
 
@@ -186,8 +191,13 @@ class ShowUserFilesSummaryDetail(APIView):
             })
 
 
+
 class UploadUserFile(APIView):
 
+    permission_classes = [AllowUploadPermission]
+    authentication_classes = [CsrfExemptSessionAuthentication]
+
+    @upload_file_swagger_schema()
     @validate_http_get_params
     def put(
             self,
