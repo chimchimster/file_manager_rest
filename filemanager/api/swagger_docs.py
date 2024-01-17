@@ -1,5 +1,8 @@
+from rest_framework import permissions
+
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
+from drf_yasg.views import get_schema_view
 
 
 def show_user_files_detail_swagger_schema():
@@ -124,9 +127,38 @@ def upload_file_swagger_schema():
     )
 
 
+def download_file_swagger_schema():
+    return swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                'file_uuid',
+                openapi.IN_QUERY,
+                description='Идентификатор файла. Идентификатор должен передан как строка состоящая из валидного типа uuid.',
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_UUID,
+                required=True,
+            ),
+        ]
+    )
+
+
+schema_view = get_schema_view(
+   openapi.Info(
+      title="API файлового хранилища",
+      default_version='v1',
+      description="Доступ и загрузка пользовательских файлов в системе iMAS.",
+      contact=openapi.Contact(email="info@imas.kz"),
+   ),
+   public=True,
+   permission_classes=(permissions.AllowAny,),
+)
+
+
 __all__ = (
     'show_user_files_detail_swagger_schema',
     'show_storage_object_detail_swagger_schema',
     'show_user_files_summary_detail_swagger_schema',
     'upload_file_swagger_schema',
+    'download_file_swagger_schema',
+    'schema_view',
 )

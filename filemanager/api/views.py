@@ -249,6 +249,7 @@ class UploadUserFile(APIView):
 
 class DownloadUserFile(APIView):
 
+    @download_file_swagger_schema()
     @validate_http_get_params
     def get(self, request):
 

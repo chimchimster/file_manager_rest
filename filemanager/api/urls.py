@@ -1,23 +1,10 @@
 from django.urls import path
-from rest_framework import permissions
-from drf_yasg.views import get_schema_view
-from drf_yasg import openapi
 
 from .views import *
+from .swagger_docs import schema_view
 
 app_name = 'api'
 
-
-schema_view = get_schema_view(
-   openapi.Info(
-      title="API файлового хранилища",
-      default_version='v1',
-      description="Доступ и загрузка пользовательских файлов в системе iMAS.",
-      contact=openapi.Contact(email="info@imas.kz"),
-   ),
-   public=True,
-   permission_classes=(permissions.AllowAny,),
-)
 
 urlpatterns = [
 
