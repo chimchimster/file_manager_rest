@@ -43,7 +43,7 @@ class Storage(models.Model):
     @admin.display(description='Скачать файлы')
     def download_file(self):
         if self.status == 'R':
-            filename = self.__get_filename(self)
+            filename = self._get_filename(self)
             encoded_filename = urllib.parse.quote(filename)
             return format_html(
                 '<input class="default" type="button" name="download_file" value="Скачать файл" '
@@ -56,7 +56,7 @@ class Storage(models.Model):
             )
 
     @staticmethod
-    def __get_filename(obj):
+    def _get_filename(obj):
         return '%s_%s%s' % (
             obj.service_name,
             obj.created_at.strftime('%Y-%m-%d_%H-%M'),

@@ -6,6 +6,7 @@ from django.conf import settings
 from django.db.models import Count, Q
 from django.db import transaction, Error
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils.encoding import smart_str
 from django.http import HttpResponse
 
 from rest_framework.response import Response
@@ -258,7 +259,7 @@ class DownloadFileView(APIView, DeleteFileMixin):
             response = HttpResponse({
                 file,
             }, content_type='application/octet-stream')
-
+            response['Content-Disposition'] = f'attachment; filename="{smart_str(storage_object.file_uuid + storage_instance.file_extension)}"'
             return response
 
     @staticmethod
