@@ -283,7 +283,7 @@ class DownloadFileView(APIView, DeleteFileMixin):
 
             return result.read()
         except minio.error.MinioException:
-            DownloadFileView.get_file_from_bucket(storage_object, retry + 1)
+            DownloadFileView.__get_file_from_bucket(storage_object, retry + 1)
 
 
 class DeleteFileView(APIView, DeleteFileMixin):
