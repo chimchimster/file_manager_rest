@@ -134,55 +134,31 @@ class ShowUserFilesSummaryDetail(APIView):
 
         request_filters = req_f.get_filters(request)
 
+        file_extensions = settings.ALLOWED_FILE_EXTENSIONS
+        statuses = {'R': 'ready', 'E': 'error', 'P': 'in_progress'}
+
+        statuses_dict = {}
+        for file_extension in file_extensions:
+            for status, transcript in statuses.items():
+                statuses_dict['_'.join((file_extension[1:], transcript))] = Count(
+                    'file_id',
+                    filter=Q(file_id__file_extension__iexact=file_extension) & Q(file_id__status__iexact=status)
+                )
+
         try:
             user_files_count = UserFile.objects.filter(
                 user_id=user_id,
                 **request_filters,
             ).aggregate(
                 total_count=Count('file_id'),
-                pdf_ready=Count(
-                    'file_id',
-                    filter=Q(file_id__file_extension__iexact='.pdf') & Q(file_id__status__iexact='R')
-                ),
-                docx_ready=Count(
-                    'file_id',
-                    filter=Q(file_id__file_extension__iexact='.docx') & Q(file_id__status__iexact='R')
-                ),
-                pptx_ready=Count(
-                    'file_id',
-                    filter=Q(file_id__file_extension__iexact='.pptx') & Q(file_id__status__iexact='R')
-                ),
-                pdf_error=Count(
-                    'file_id',
-                    filter=Q(file_id__file_extension__iexact='.pdf') & Q(file_id__status__iexact='E')
-                ),
-                docx_error=Count(
-                    'file_id',
-                    filter=Q(file_id__file_extension__iexact='.docx') & Q(file_id__status__iexact='E')
-                ),
-                pptx_error=Count(
-                    'file_id',
-                    filter=Q(file_id__file_extension__iexact='.pptx') & Q(file_id__status__iexact='E')
-                ),
-                pdf_in_progress=Count(
-                    'file_id',
-                    filter=Q(file_id__file_extension__iexact='.pdf') & Q(file_id__status__iexact='P')
-                ),
-                docx_in_progress=Count(
-                    'file_id',
-                    filter=Q(file_id__file_extension__iexact='.docx') & Q(file_id__status__iexact='P')
-                ),
-                pptx_in_progress=Count(
-                    'file_id',
-                    filter=Q(file_id__file_extension__iexact='.pptx') & Q(file_id__status__iexact='P')
-                ),
+                **statuses_dict,
             )
             if sum(user_files_count.values()) < 1:
                 raise ObjectDoesNotExist
         except ObjectDoesNotExist:
             raise ObjectIsNotFound(
                 404,
-                'User\'s files with "id" %s do not found on server.' % user_id
+                'User\'s files with "id" %s have not been found on server.' % user_id
             )
         else:
             return Response({
@@ -191,8 +167,7 @@ class ShowUserFilesSummaryDetail(APIView):
             })
 
 
-
-class UploadUserFile(APIView):
+class UploadUserFileView(APIView):
 
     permission_classes = [AllowUploadPermission]
     authentication_classes = [CsrfExemptSessionAuthentication]
@@ -247,7 +222,7 @@ class UploadUserFile(APIView):
             })
 
 
-class DownloadUserFile(APIView):
+class DownloadFileView(APIView):
 
     @download_file_swagger_schema()
     @validate_http_get_params
@@ -263,6 +238,7 @@ class DownloadUserFile(APIView):
 
         try:
             storage_object = Storage.objects.get(file_uuid=file_uuid)
+            self.__check_if_file_available(storage_object)
         except Storage.DoesNotExist:
             raise ObjectIsNotFound(
                 404,
@@ -276,7 +252,7 @@ class DownloadUserFile(APIView):
                     'File has %s status. Only files with ready status could be downloaded.' % status
                 )
 
-            file = self.get_file_from_bucket(storage_object)
+            file = self.__get_file_from_bucket(storage_object)
             response = HttpResponse({
                 file,
             }, content_type='application/octet-stream')
@@ -284,7 +260,13 @@ class DownloadUserFile(APIView):
             return response
 
     @staticmethod
-    def get_file_from_bucket(
+    def __check_if_file_available(storage_object: Storage):
+        file_id_pk = storage_object.file_id
+        file_available = UserFile.objects.filter(file_id=file_id_pk).values_list('available')
+        print(file_available)
+
+    @staticmethod
+    def __get_file_from_bucket(
             storage_object: Storage,
             retry: int = 0,
     ) -> bytes:
@@ -308,10 +290,16 @@ class DownloadUserFile(APIView):
             DownloadUserFile.get_file_from_bucket(storage_object, retry + 1)
 
 
+class DeleteFileView(APIView):
+    def delete(self, user: int, file_uuid: str):
+        pass
+
+
 __all__ = (
     'ShowUserFilesDetail',
     'ShowStorageObjectDetail',
     'ShowUserFilesSummaryDetail',
-    'UploadUserFile',
-    'DownloadUserFile',
+    'UploadUserFileView',
+    'DownloadFileView',
+    'DeleteFileView',
 )

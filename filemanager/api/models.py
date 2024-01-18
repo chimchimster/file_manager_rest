@@ -3,7 +3,6 @@ import urllib.parse
 from django.contrib import admin
 from django.utils.html import format_html
 from django.db import models
-from django.conf import settings
 from django.urls import reverse
 from django.db.models import F
 
@@ -68,12 +67,13 @@ class Storage(models.Model):
 
     @staticmethod
     def __form_url_to_download_file(file_uuid):
-        return reverse('api:download-user-file') + '?file_uuid=%s' % file_uuid
+        return reverse('api:download-file') + '?file_uuid=%s' % file_uuid
 
 
 class UserFile(models.Model):
-    user_id = models.IntegerField(verbose_name='Идентификатор пользователя')
-    file_id = models.ForeignKey(Storage, on_delete=models.CASCADE, related_name='userfiles', verbose_name='Файл')
+    user_id = models.IntegerField(verbose_name='Пользователь')
+    file_id = models.OneToOneField(Storage, primary_key=True, on_delete=models.CASCADE, related_name='userfiles', verbose_name='Файл')
+    available = models.BooleanField(default=True, null=False, verbose_name='Удалено у пользователя')
 
     def __str__(self):
         return 'Пользователь %s: %s' % (self.user_id, self.file_id)
@@ -82,3 +82,9 @@ class UserFile(models.Model):
         verbose_name = 'Файл пользователя'
         verbose_name_plural = 'Файлы пользователя'
         ordering = (F('file_id__updated_at').desc(),)
+        constraints = (
+            models.UniqueConstraint(
+                fields=['user_id', 'file_id'],
+                name='unique_user__file'
+            ),
+        )

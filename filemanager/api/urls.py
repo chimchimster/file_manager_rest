@@ -12,13 +12,20 @@ urlpatterns = [
     path('files/', ShowUserFilesDetail.as_view(), name='user-files'),
     path('files/file/', ShowStorageObjectDetail.as_view(), name='user-file'),
     path('files/summary/', ShowUserFilesSummaryDetail.as_view(), name='user-files-summary'),
-    path('files/file/download/', DownloadUserFile.as_view(), name='download-user-file'),
+    path('files/file/download/', DownloadFileView.as_view(), name='download-file'),
 
     # PUT methods
     path(
         'files/file/upload/<int:user_id>/<str:from_service>/<str:file_uuid>/<str:file_extension>/',
-        UploadUserFile.as_view(),
-        name='user-files-upload'
+        UploadUserFileView.as_view(),
+        name='user-file-upload',
+    ),
+
+    # DELETE methods
+    path(
+        'files/file/delete/<str:file_uuid>',
+        DeleteFileView.as_view(),
+        name='delete-file',
     ),
 
     # Docs

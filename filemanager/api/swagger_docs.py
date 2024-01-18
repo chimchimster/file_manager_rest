@@ -6,7 +6,6 @@ from drf_yasg.views import get_schema_view
 
 
 def show_user_files_detail_swagger_schema():
-
     return swagger_auto_schema(
         manual_parameters=[
             openapi.Parameter(
