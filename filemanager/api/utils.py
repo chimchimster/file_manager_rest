@@ -169,8 +169,6 @@ class ParamsChecker:
         check_method = self.__available_check_methods.get(name)
         if check_method is not None:
             check_method(value)
-        else:
-            raise ValueError('Invalid check %s' % name)
 
     @staticmethod
     def __check_user(value):

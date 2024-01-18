@@ -238,7 +238,6 @@ class DownloadFileView(APIView):
 
         try:
             storage_object = Storage.objects.get(file_uuid=file_uuid)
-            self.__check_if_file_available(storage_object)
         except Storage.DoesNotExist:
             raise ObjectIsNotFound(
                 404,
@@ -258,12 +257,6 @@ class DownloadFileView(APIView):
             }, content_type='application/octet-stream')
 
             return response
-
-    @staticmethod
-    def __check_if_file_available(storage_object: Storage):
-        file_id_pk = storage_object.file_id
-        file_available = UserFile.objects.filter(file_id=file_id_pk).values_list('available')
-        print(file_available)
 
     @staticmethod
     def __get_file_from_bucket(

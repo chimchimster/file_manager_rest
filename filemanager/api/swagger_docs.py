@@ -80,18 +80,6 @@ def show_storage_object_detail_swagger_schema():
                 format=openapi.FORMAT_UUID,
                 required=True,
             ),
-            openapi.Parameter(
-                'start',
-                openapi.IN_QUERY,
-                description='Начальная дата поиска. Дата должна быть записана в формате: YYYY-MM-DD либо YYYY-MM-DD HH:MM:SS.',
-                type=openapi.TYPE_STRING,
-            ),
-            openapi.Parameter(
-                'end',
-                openapi.IN_QUERY,
-                description='Конечная дата поиска. Дата должна быть записана в формате: YYYY-MM-DD либо YYYY-MM-DD HH:MM:SS.',
-                type=openapi.TYPE_STRING,
-            ),
         ]
     )
 

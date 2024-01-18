@@ -19,6 +19,14 @@ class ObjectIsNotFound(BaseAPIException):
     pass
 
 
+class FileHasBeenUnlinked(BaseAPIException):
+    pass
+
+
+class FileHasBeenRemovedFromBucket(BaseAPIException):
+    pass
+
+
 class MissingParameter(BaseAPIException):
     pass
 
@@ -72,4 +80,6 @@ __all__ = [
     'WrongFileExtension',
     'WrongPaginationValue',
     'WrongService',
+    'FileHasBeenUnlinked',
+    'FileHasBeenRemovedFromBucket',
 ]

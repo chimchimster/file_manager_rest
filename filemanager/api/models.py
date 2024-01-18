@@ -28,8 +28,6 @@ class Storage(models.Model):
         )
 
     class Meta:
-        index_together = ('file_uuid', 'file_extension')
-        unique_together = ('file_uuid', 'file_extension')
         ordering = ('-updated_at',)
 
         verbose_name = 'Хранилище'
