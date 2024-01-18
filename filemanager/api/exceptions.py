@@ -23,7 +23,11 @@ class FileHasBeenUnlinked(BaseAPIException):
     pass
 
 
-class FileHasBeenRemovedFromBucket(BaseAPIException):
+class FileHasBeenRemovedFromFS(BaseAPIException):
+    pass
+
+
+class FileIsAlreadyUnlinked(BaseAPIException):
     pass
 
 
@@ -81,5 +85,6 @@ __all__ = [
     'WrongPaginationValue',
     'WrongService',
     'FileHasBeenUnlinked',
-    'FileHasBeenRemovedFromBucket',
+    'FileHasBeenRemovedFromFS',
+    'FileIsAlreadyUnlinked',
 ]

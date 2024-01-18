@@ -129,6 +129,28 @@ def download_file_swagger_schema():
     )
 
 
+def delete_file_swagger_schema():
+    return swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                'user',
+                openapi.IN_QUERY,
+                description='Идентификатор пользователя файл которого Вы хотите удалить.',
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                'file_uuid',
+                openapi.IN_QUERY,
+                description='Идентификатор файла. Идентификатор должен передан как строка состоящая из валидного типа uuid.',
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_UUID,
+                required=True,
+            ),
+        ]
+    )
+
+
 schema_view = get_schema_view(
    openapi.Info(
       title="API файлового хранилища",
@@ -147,5 +169,6 @@ __all__ = (
     'show_user_files_summary_detail_swagger_schema',
     'upload_file_swagger_schema',
     'download_file_swagger_schema',
+    'delete_file_swagger_schema',
     'schema_view',
 )

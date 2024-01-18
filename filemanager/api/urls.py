@@ -23,7 +23,7 @@ urlpatterns = [
 
     # DELETE methods
     path(
-        'files/file/delete/<str:file_uuid>',
+        'files/file/delete/<int:user>/<str:file_uuid>/<str:file_extension>/',
         DeleteFileView.as_view(),
         name='delete-file',
     ),

@@ -70,8 +70,8 @@ class Storage(models.Model):
 
 class UserFile(models.Model):
     user_id = models.IntegerField(verbose_name='Пользователь')
-    file_id = models.OneToOneField(Storage, primary_key=True, on_delete=models.CASCADE, related_name='userfiles', verbose_name='Файл')
-    available = models.BooleanField(default=True, null=False, verbose_name='Удалено у пользователя')
+    file_id = models.ForeignKey(Storage, on_delete=models.CASCADE, related_name='userfiles', verbose_name='Файл')
+    available = models.BooleanField(default=True, null=False, verbose_name='Доступно')
 
     def __str__(self):
         return 'Пользователь %s: %s' % (self.user_id, self.file_id)

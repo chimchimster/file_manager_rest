@@ -6,3 +6,12 @@ class AllowUploadPermission(BasePermission):
 
         return request.method == 'PUT'
 
+
+class AllowDeletePermission(BasePermission):
+
+    def has_permission(self, request, view):
+
+        return request.method == 'DELETE'
+
+
+__all__ = ('AllowUploadPermission', 'AllowDeletePermission')

@@ -18,11 +18,11 @@ from .models import UserFile, Storage
 from .exceptions import *
 from .serializers import FileSerializer, StorageSerializer
 from .middlewares import validate_http_get_params
-from .permissions import AllowUploadPermission
-from .tasks import send_file_to_storage
+from .permissions import *
+from .tasks import send_file_to_storage, remove_file_from_storage
+from .mixins import DeleteFileMixin
 from .authentication import CsrfExemptSessionAuthentication
 from .swagger_docs import *
-
 
 config = configparser.ConfigParser()
 config.read(settings.BASE_DIR / 'conf.ini')
@@ -168,7 +168,6 @@ class ShowUserFilesSummaryDetail(APIView):
 
 
 class UploadUserFileView(APIView):
-
     permission_classes = [AllowUploadPermission]
     authentication_classes = [CsrfExemptSessionAuthentication]
 
@@ -222,7 +221,7 @@ class UploadUserFileView(APIView):
             })
 
 
-class DownloadFileView(APIView):
+class DownloadFileView(APIView, DeleteFileMixin):
 
     @download_file_swagger_schema()
     @validate_http_get_params
@@ -238,6 +237,11 @@ class DownloadFileView(APIView):
 
         try:
             storage_object = Storage.objects.get(file_uuid=file_uuid)
+            if not self._check_for_files_availability(storage_object):
+                raise FileHasBeenRemovedFromFS(
+                    404,
+                    'Requested file has been removed from the file system.'
+                )
         except Storage.DoesNotExist:
             raise ObjectIsNotFound(
                 404,
@@ -245,7 +249,6 @@ class DownloadFileView(APIView):
             )
         else:
             if status := {'P': 'in progress', 'E': 'error'}.get(storage_object.status):
-
                 raise InappropriateFileStatus(
                     404,
                     'File has %s status. Only files with ready status could be downloaded.' % status
@@ -283,9 +286,29 @@ class DownloadFileView(APIView):
             DownloadUserFile.get_file_from_bucket(storage_object, retry + 1)
 
 
-class DeleteFileView(APIView):
-    def delete(self, user: int, file_uuid: str):
-        pass
+class DeleteFileView(APIView, DeleteFileMixin):
+    permission_classes = [AllowDeletePermission]
+    authentication_classes = [CsrfExemptSessionAuthentication]
+
+    def delete(self, request, user: int, file_uuid: str, file_extension: str):
+
+        file_to_unlink = UserFile.objects.filter(user_id=user, file_id__file_uuid=file_uuid).get()
+
+        if not file_to_unlink:
+            raise FileHasBeenUnlinked(
+                404,
+                'Seems that user\'s %s file %s has been already removed.' % (user, file_uuid)
+            )
+
+        if file_to_unlink.available:
+            file_to_unlink.available = False
+            file_to_unlink.save()
+
+            if not self._check_for_files_availability(file_to_unlink):
+                remove_file_from_storage.delay(file_uuid, file_extension)
+            return Response({'detail': 'Successfully unlinked file %s from user %s.' % (file_uuid, user)})
+        else:
+            return Response({'detail': 'File with id %s has been already unlinked from user %s' % (file_uuid, user)})
 
 
 __all__ = (
