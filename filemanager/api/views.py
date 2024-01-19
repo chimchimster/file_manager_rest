@@ -10,6 +10,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.utils.encoding import smart_str
 from django.http import HttpResponse
 
+from filemanager.settings.prod import DEBUG
+
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -26,7 +28,7 @@ from .mixins import DeleteFileMixin
 from .authentication import CsrfExemptSessionAuthentication
 from .swagger_docs import *
 
-MODE = bool(int(settings.prod.DEBUG))
+MODE = bool(int(DEBUG))
 
 if MODE:
     config = configparser.ConfigParser()

@@ -10,9 +10,9 @@ import minio.error
 
 from api.minio_api import get_minio_client
 from .models import Storage
+from filemanager.settings.prod import DEBUG
 
-
-MODE = bool(int(settings.prod.DEBUG))
+MODE = bool(int(DEBUG))
 
 if MODE:
     config = configparser.ConfigParser()
@@ -73,9 +73,9 @@ def remove_file_from_storage(file_uuid: str, file_extension: str, retries: int =
 
     minio_client = get_minio_client()
 
-    if minio_client.bucket_exists(bucket_name):
+    if minio_client.bucket_exists(BUCKET_NAME):
 
         try:
-            minio_client.remove_object(bucket_name, file_uuid + file_extension)
+            minio_client.remove_object(BUCKET_NAME, file_uuid + file_extension)
         except minio.error.MinioException:
-            remove_file_from_storage(bucket_name, file_uuid + file_extension, retries + 1)
+            remove_file_from_storage(BUCKET_NAME, file_uuid + file_extension, retries + 1)
