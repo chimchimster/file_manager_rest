@@ -1,4 +1,5 @@
 import io
+import os
 import configparser
 
 import celery
@@ -10,9 +11,15 @@ import minio.error
 from api.minio_api import get_minio_client
 from .models import Storage
 
-config = configparser.ConfigParser()
-config.read(settings.BASE_DIR / 'conf.ini')
-bucket_name = config['MinIO']['BucketName']
+
+MODE = settings.DEBUG
+
+if MODE:
+    config = configparser.ConfigParser()
+    config.read(settings.BASE_DIR / 'conf.ini')
+    BUCKET_NAME = config['MinIO']['BucketName']
+else:
+    BUCKET_NAME = os.getenv('BUCKET_NAME')
 
 
 class CeleryTask(celery.Task):
@@ -32,7 +39,7 @@ def send_file_to_storage(file_data: bytes, file_uuid: str, file_extension: str, 
 
     minio_client = get_minio_client()
 
-    if minio_client.bucket_exists(bucket_name):
+    if minio_client.bucket_exists(BUCKET_NAME):
         with transaction.atomic():
             try:
                 storage_obj = Storage.objects.get(
@@ -46,7 +53,7 @@ def send_file_to_storage(file_data: bytes, file_uuid: str, file_extension: str, 
             else:
                 try:
                     bts = io.BytesIO(file_data)
-                    minio_client.put_object(bucket_name, file_uuid + file_extension, bts, len(file_data))
+                    minio_client.put_object(BUCKET_NAME, file_uuid + file_extension, bts, len(file_data))
                 except (minio.error.MinioException, ValueError):
                     storage_obj.status = 'E'
                 else:
@@ -54,7 +61,7 @@ def send_file_to_storage(file_data: bytes, file_uuid: str, file_extension: str, 
                 finally:
                     storage_obj.save()
     else:
-        minio_client.make_bucket(bucket_name)
+        minio_client.make_bucket(BUCKET_NAME)
         send_file_to_storage(file_data, file_uuid, file_extension, retries + 1)
 
 

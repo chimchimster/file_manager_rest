@@ -68,7 +68,7 @@ class Storage(models.Model):
         return reverse('api:download-file') + '?file_uuid=%s' % file_uuid
 
 
-class UserFile(models.Model):
+class UserStorage(models.Model):
     user_id = models.IntegerField(verbose_name='Пользователь')
     file_id = models.ForeignKey(Storage, on_delete=models.CASCADE, related_name='userfiles', verbose_name='Файл')
     available = models.BooleanField(default=True, null=False, verbose_name='Доступно')

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Storage, UserFile
+from .models import Storage, UserStorage
 
 
 class StorageFileAdmin(admin.ModelAdmin):
@@ -64,4 +64,4 @@ class iMASAdmin(admin.AdminSite):
 imas_admin = iMASAdmin(name='imas')
 
 imas_admin.register(Storage, admin_class=StorageFileAdmin)
-imas_admin.register(UserFile, admin_class=UserFileAdmin)
+imas_admin.register(UserStorage, admin_class=UserFileAdmin)

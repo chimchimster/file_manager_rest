@@ -1,4 +1,4 @@
-from .models import Storage, UserFile
+from .models import Storage, UserStorage
 
 
 class DeleteFileMixin:

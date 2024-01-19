@@ -15,7 +15,7 @@ from rest_framework.views import APIView
 from .minio_api import get_minio_client
 
 from .utils import ReqFilter
-from .models import UserFile, Storage
+from .models import Storage
 from .exceptions import *
 from .serializers import FileSerializer, StorageSerializer
 from .middlewares import validate_http_get_params
@@ -259,7 +259,7 @@ class DownloadFileView(APIView, DeleteFileMixin):
             response = HttpResponse({
                 file,
             }, content_type='application/octet-stream')
-            response['Content-Disposition'] = f'attachment; filename="{smart_str(storage_object.file_uuid + storage_instance.file_extension)}"'
+            response['Content-Disposition'] = f'attachment; filename="{smart_str(str(storage_object.file_uuid) + storage_object.file_extension)}"'
             return response
 
     @staticmethod

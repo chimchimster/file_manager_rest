@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Storage, UserFile
+from .models import Storage, UserStorage
 
 
 class StorageSerializer(serializers.ModelSerializer):
@@ -32,7 +32,7 @@ class FileSerializer(serializers.ModelSerializer):
     filename = serializers.SerializerMethodField()
 
     class Meta:
-        model = UserFile
+        model = UserStorage
         fields = ['file_data', 'filename']
 
     def get_filename(self, obj):
