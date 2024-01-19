@@ -5,7 +5,7 @@ metadata:
   namespace: production
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
-    nginx.ingress.kubernetes.io/whitelist-source-range: "94.247.130.46/32"
+#    nginx.ingress.kubernetes.io/whitelist-source-range: "94.247.130.46/32"
 spec:
   ingressClassName: nginx
   rules:

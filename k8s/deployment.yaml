@@ -16,7 +16,7 @@ spec:
   template:
     metadata:
       labels:
-        app: storage-api
+        app.kubernetes.io/name: storage-api
     spec:
       terminationGracePeriodSeconds: 30
       containers:
