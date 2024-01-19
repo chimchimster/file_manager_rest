@@ -8,30 +8,30 @@ spec:
     matchLabels:
       app: storage-api
     replicas: 1
-    strategy:
-      type: RollingUpdate
-      rollingUpdate:
-        maxSurge: 1
-        maxUnavailable: 1
-    template:
-      metadata:
-        labels:
-          app: storage-api
-      spec:
-        terminationGracePeriodSeconds: 30
-        containers:
-          - name: reports-app
-            image: registry-gitlab.imas.kz/imas/storage-api:latest
-            imagePullPolicy: "Always"
-            envFrom:
-              - secretRef:
-                  name: storage-api-secret
-            resources:
-              requests:
-                memory: "500Mi"
-                cpu: "1"
-              limits:
-                memory: "500Mi"
-                cpu: "1"
-        imagePullSecrets:
-          - name: regcred
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: storage-api
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: reports-app
+          image: registry-gitlab.imas.kz/imas/storage-api:latest
+          imagePullPolicy: "Always"
+          envFrom:
+            - secretRef:
+                name: storage-api-secret
+          resources:
+            requests:
+              memory: "500Mi"
+              cpu: "1"
+            limits:
+              memory: "500Mi"
+              cpu: "1"
+      imagePullSecrets:
+        - name: regcred
