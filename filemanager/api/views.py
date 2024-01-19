@@ -16,7 +16,7 @@ from rest_framework.views import APIView
 from .minio_api import get_minio_client
 
 from .utils import ReqFilter
-from .models import Storage
+from .models import Storage, UserStorage
 from .exceptions import *
 from .serializers import FileSerializer, StorageSerializer
 from .middlewares import validate_http_get_params
@@ -26,7 +26,7 @@ from .mixins import DeleteFileMixin
 from .authentication import CsrfExemptSessionAuthentication
 from .swagger_docs import *
 
-MODE = False
+MODE = bool(int(settings.DEBUG))
 
 if MODE:
     config = configparser.ConfigParser()
@@ -61,7 +61,7 @@ class ShowUserFilesDetail(APIView):
         start_index = request_filters.pop('page')
         end_index = request_filters.pop('page_size')
 
-        user_files = UserFile.objects.filter(
+        user_files = UserStorage.objects.filter(
             user_id=user_id,
             **request_filters,
         )[start_index:end_index]
@@ -153,7 +153,7 @@ class ShowUserFilesSummaryDetail(APIView):
                 )
 
         try:
-            user_files_count = UserFile.objects.filter(
+            user_files_count = UserStorage.objects.filter(
                 user_id=user_id,
                 **request_filters,
             ).aggregate(
@@ -200,7 +200,7 @@ class UploadUserFileView(APIView):
                     service_name=from_service,
                 )
 
-                UserFile.objects.create(
+                UserStorage.objects.create(
                     user_id=user_id,
                     file_id=storage_object,
                 )
@@ -299,7 +299,7 @@ class DeleteFileView(APIView, DeleteFileMixin):
 
     def delete(self, request, user: int, file_uuid: str, file_extension: str):
 
-        file_to_unlink = UserFile.objects.filter(user_id=user, file_id__file_uuid=file_uuid).get()
+        file_to_unlink = UserStorage.objects.filter(user_id=user, file_id__file_uuid=file_uuid).get()
 
         if not file_to_unlink:
             raise FileHasBeenUnlinked(

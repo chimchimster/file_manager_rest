@@ -4,7 +4,7 @@ from .base import *
 
 
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
-DEBUG = bool(os.getenv('DEBUG'))
+DEBUG = bool(int(os.getenv('DEBUG')))
 
 # Databases definition
 
