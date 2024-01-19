@@ -12,8 +12,8 @@ from api.minio_api import get_minio_client
 from .models import Storage
 
 
-MODE = settings.DEBUG
-print("DEBUG MODE: ", MODE)
+MODE = False
+
 if MODE:
     config = configparser.ConfigParser()
     config.read(settings.BASE_DIR / 'conf.ini')
