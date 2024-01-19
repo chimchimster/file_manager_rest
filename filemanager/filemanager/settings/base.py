@@ -80,7 +80,7 @@ USE_TZ = False
 # Static files (CSS, JavaScript, Images)
 
 STATIC_URL = 'static/'
-STATIC_ROOT = 'static'
+STATIC_ROOT = BASE_DIR / 'static'
 
 # Default primary key field type
 
