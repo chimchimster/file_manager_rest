@@ -26,7 +26,7 @@ from .mixins import DeleteFileMixin
 from .authentication import CsrfExemptSessionAuthentication
 from .swagger_docs import *
 
-MODE = settings.DEBUG
+MODE = False
 
 if MODE:
     config = configparser.ConfigParser()
