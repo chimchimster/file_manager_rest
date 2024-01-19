@@ -1,4 +1,5 @@
 import configparser
+import os
 from typing import Optional
 
 import minio.error
@@ -25,9 +26,14 @@ from .mixins import DeleteFileMixin
 from .authentication import CsrfExemptSessionAuthentication
 from .swagger_docs import *
 
-config = configparser.ConfigParser()
-config.read(settings.BASE_DIR / 'conf.ini')
-bucket_name = config['MinIO']['BucketName']
+MODE = settings.DEBUG
+
+if MODE:
+    config = configparser.ConfigParser()
+    config.read(settings.BASE_DIR / 'conf.ini')
+    bucket_name = config['MinIO']['BucketName']
+else:
+    bucket_name = os.environ.get('BUCKET_NAME')
 
 
 class ShowUserFilesDetail(APIView):
