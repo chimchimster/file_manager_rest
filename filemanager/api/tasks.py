@@ -13,7 +13,7 @@ from .models import Storage
 
 
 MODE = settings.DEBUG
-
+print("DEBUG MODE: ", MODE)
 if MODE:
     config = configparser.ConfigParser()
     config.read(settings.BASE_DIR / 'conf.ini')
