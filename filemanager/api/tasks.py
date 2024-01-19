@@ -10,9 +10,9 @@ import minio.error
 
 from api.minio_api import get_minio_client
 from .models import Storage
-from filemanager.settings.prod import DEBUG
 
-MODE = bool(int(DEBUG))
+print(settings.DEBUG)
+MODE = bool(int(settings.DEBUG))
 
 if MODE:
     config = configparser.ConfigParser()
