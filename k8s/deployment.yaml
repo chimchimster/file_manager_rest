@@ -6,7 +6,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: storage-api
+      app: storage-api
   replicas: 1
   strategy:
     type: RollingUpdate
@@ -16,7 +16,7 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: storage-api
+        app: storage-api
     spec:
       terminationGracePeriodSeconds: 30
       containers:

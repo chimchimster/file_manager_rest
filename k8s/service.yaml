@@ -5,7 +5,7 @@ metadata:
   namespace: production
 spec:
   selector:
-    app.kubernetes.io/name: storage-api
+    app: storage-api
   ports:
     - protocol: TCP
       port: 8000
