@@ -12,7 +12,7 @@ from api.minio_api import get_minio_client
 from .models import Storage
 
 
-MODE = bool(int(settings.DEBUG))
+MODE = bool(int(settings.prod.DEBUG))
 
 if MODE:
     config = configparser.ConfigParser()
