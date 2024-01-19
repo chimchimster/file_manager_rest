@@ -26,12 +26,12 @@ spec:
           envFrom:
             - secretRef:
                 name: storage-api-secret
-          resources:
-            requests:
-              memory: "500Mi"
-              cpu: "1"
-            limits:
-              memory: "500Mi"
-              cpu: "1"
+#          resources:
+#            requests:
+#              memory: "500Mi"
+#              cpu: "1"
+#            limits:
+#              memory: "500Mi"
+#              cpu: "1"
       imagePullSecrets:
         - name: regcred
