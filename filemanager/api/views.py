@@ -63,9 +63,10 @@ class ShowUserFilesDetail(APIView):
 
         user_files = UserStorage.objects.filter(
             user_id=user_id,
+            available=True,
             **request_filters,
         )[start_index:end_index]
-        total_count = UserStorage.objects.filter(user_id=user_id).count()
+        total_count = UserStorage.objects.filter(user_id=user_id, available=True).count()
 
         serializer = FileSerializer(user_files, many=True)
 
@@ -156,6 +157,7 @@ class ShowUserFilesSummaryDetail(APIView):
         try:
             user_files_count = UserStorage.objects.filter(
                 user_id=user_id,
+                available=True,
                 **request_filters,
             ).aggregate(
                 total_count=Count('file_id'),
