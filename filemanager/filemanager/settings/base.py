@@ -110,3 +110,19 @@ SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH': False,
     'SECURITY_DEFINITIONS': {},
 }
+
+# Logging
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}
