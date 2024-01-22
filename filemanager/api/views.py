@@ -65,6 +65,7 @@ class ShowUserFilesDetail(APIView):
             user_id=user_id,
             **request_filters,
         )[start_index:end_index]
+        total_count = UserStorage.objects.filter(user_id=user_id).count()
 
         serializer = FileSerializer(user_files, many=True)
 
@@ -74,7 +75,7 @@ class ShowUserFilesDetail(APIView):
                 'Requested data not found on server.'
             )
 
-        return Response({'user_id': user_id, 'files': serializer.data})
+        return Response({'total_count': total_count, 'user_id': user_id, 'files': serializer.data})
 
 
 class ShowStorageObjectDetail(APIView):

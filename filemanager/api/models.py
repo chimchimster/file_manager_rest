@@ -1,7 +1,8 @@
 import urllib.parse
 
 from django.contrib import admin
-from django.utils.html import format_html
+from django.core.exceptions import ObjectDoesNotExist
+from django.utils.html import format_html, mark_safe
 from django.db import models
 from django.urls import reverse
 from django.db.models import F
@@ -43,6 +44,19 @@ class Storage(models.Model):
     @admin.display(description='Скачать файлы')
     def download_file(self):
         if self.status == 'R':
+
+            try:
+                file_available = UserStorage.objects.get(file_id=self.file_id)
+                file_available = file_available.available
+
+                if not file_available:
+                    raise ObjectDoesNotExist
+
+            except ObjectDoesNotExist:
+                return mark_safe(
+                    '<button style="background-color: red;" class="button" disabled name="removed" value="Файл удален">Файл удален</button>'
+                )
+
             filename = self._get_filename(self)
             encoded_filename = urllib.parse.quote(filename)
             return format_html(
