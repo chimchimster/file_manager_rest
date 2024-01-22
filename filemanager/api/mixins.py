@@ -8,7 +8,7 @@ class DeleteFileMixin:
 
         file_id = storage_object.file_id
 
-        availabilities = UserFile.objects.filter(file_id=file_id).values_list('available').all()
+        availabilities = UserStorage.objects.filter(file_id=file_id).values_list('available').all()
 
         if not all([item[-1] for item in availabilities]):
             return False
