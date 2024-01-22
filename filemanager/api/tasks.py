@@ -11,8 +11,7 @@ import minio.error
 from api.minio_api import get_minio_client
 from .models import Storage
 
-print(settings.DEBUG)
-MODE = bool(int(settings.DEBUG))
+MODE = False
 
 if MODE:
     config = configparser.ConfigParser()
