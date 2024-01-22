@@ -11,7 +11,7 @@ class Storage(models.Model):
     STATUSES = ('R', 'ready'), ('E', 'error'), ('P', 'In progress')
 
     file_id = models.AutoField(primary_key=True, db_column='pk')
-    file_uuid = models.UUIDField(null=False, db_index=True, verbose_name='Уникальный идентификатор файла')
+    file_uuid = models.UUIDField(null=False, db_index=True, unique=True, verbose_name='Уникальный идентификатор файла')
     file_extension = models.CharField(max_length=6, null=False, verbose_name='Расширение файла')
     service_name = models.CharField(max_length=15, null=False, verbose_name='Имя сервиса')
     status = models.CharField(max_length=1, choices=STATUSES, default='P', verbose_name='Статус готовности')

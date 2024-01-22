@@ -8,11 +8,10 @@ from celery import shared_task
 from django.conf import settings
 from django.db import transaction
 
-from filemanager.settings.prod import DEBUG
 from api.minio_api import get_minio_client
 from .models import Storage
 
-MODE = bool(int(DEBUG))
+MODE = bool(int(settings.DEBUG))
 
 if MODE:
     config = configparser.ConfigParser()

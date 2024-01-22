@@ -2,11 +2,11 @@ import os
 import configparser
 
 from django.conf import settings
-from filemanager.settings.prod import DEBUG
+
 from minio import Minio
 
 
-MODE = bool(int(DEBUG))
+MODE = bool(int(settings.DEBUG))
 
 
 def get_minio_client() -> Minio:
