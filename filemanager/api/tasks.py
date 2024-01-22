@@ -2,16 +2,17 @@ import io
 import os
 import configparser
 
+import minio.error
 import celery
 from celery import shared_task
 from django.conf import settings
 from django.db import transaction
-import minio.error
 
+from filemanager.settings.prod import DEBUG
 from api.minio_api import get_minio_client
 from .models import Storage
 
-MODE = bool(int(settings.DEBUG))
+MODE = bool(int(DEBUG))
 
 if MODE:
     config = configparser.ConfigParser()
