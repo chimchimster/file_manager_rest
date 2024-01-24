@@ -76,7 +76,7 @@ class ShowUserFilesDetail(APIView):
                 'Requested data not found on server.'
             )
 
-        return Response({'total_count': len(user_files), 'user_id': user_id, 'files': serializer.data})
+        return Response({'total_count': len(all_user_files), 'user_id': user_id, 'files': serializer.data})
 
 
 class ShowStorageObjectDetail(APIView):
