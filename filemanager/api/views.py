@@ -61,13 +61,14 @@ class ShowUserFilesDetail(APIView):
         start_index = request_filters.pop('page')
         end_index = request_filters.pop('page_size')
 
-        user_files = UserStorage.objects.filter(
+        all_user_files = UserStorage.objects.filter(
             user_id=user_id,
             available=True,
             **request_filters,
-        )[start_index:end_index]
+        )
+        part_user_files = all_user_files[start_index:end_index]
 
-        serializer = FileSerializer(user_files, many=True)
+        serializer = FileSerializer(part_user_files, many=True)
 
         if not serializer.data:
             raise DataNotFound(
