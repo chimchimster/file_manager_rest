@@ -8,6 +8,10 @@ metadata:
 #    nginx.ingress.kubernetes.io/whitelist-source-range: "94.247.130.46/32"
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+        - storage-api.imas.kz
+      secretName: imas-tls
   rules:
     - host: "storage-api.imas.kz"
       http:
