@@ -3,6 +3,7 @@ from rest_framework import permissions
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg.views import get_schema_view
+from drf_yasg.generators import OpenAPISchemaGenerator
 
 
 def show_user_files_detail_swagger_schema():
@@ -151,6 +152,13 @@ def delete_file_swagger_schema():
     )
 
 
+class BothHttpAndHttpsSchemaGenerator(OpenAPISchemaGenerator):
+    def get_schema(self, request=None, public=False):
+        schema = super().get_schema(request, public)
+        schema.schemes = ["http", "https"]
+        return schema
+
+
 schema_view = get_schema_view(
    openapi.Info(
       title="API файлового хранилища",
@@ -160,6 +168,8 @@ schema_view = get_schema_view(
    ),
    public=True,
    permission_classes=(permissions.AllowAny,),
+   generator_class=BothHttpAndHttpsSchemaGenerator
+
 )
 
 
