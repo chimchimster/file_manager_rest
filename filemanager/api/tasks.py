@@ -9,6 +9,7 @@ from django.conf import settings
 from django.db import transaction
 
 from api.minio_api import get_minio_client
+from api.broker import r_client
 from .models import Storage
 
 MODE = bool(int(settings.DEBUG))
@@ -48,6 +49,7 @@ def send_file_to_storage(file_data: bytes, file_uuid: str, file_extension: str, 
             except Storage.DoesNotExist:
                 storage_obj.status = 'E'
                 storage_obj.save()
+                r_client.send_message(file_uuid, 'error')
                 return
             else:
                 try:
@@ -55,8 +57,10 @@ def send_file_to_storage(file_data: bytes, file_uuid: str, file_extension: str, 
                     minio_client.put_object(BUCKET_NAME, file_uuid + file_extension, bts, len(file_data))
                 except (minio.error.MinioException, ValueError):
                     storage_obj.status = 'E'
+                    r_client.send_message(file_uuid, 'error')
                 else:
                     storage_obj.status = 'R'
+                    r_client.send_message(file_uuid, 'ready')
                 finally:
                     storage_obj.save()
     else:
